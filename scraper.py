@@ -60,12 +60,16 @@ SCRAPERS = dict(
         "registrar": "http://creationdentreprise.sn/rechercher-une-societe?field_rc_societe_value=&field_ninea_societe_value=&denomination=&field_localite_nid=All&field_siege_societe_value=&field_forme_juriduqe_nid=All&field_secteur_nid=All&field_date_crea_societe_value=&page=%s"
     }
 )
+
+# Doctors domain
 CLOUDSEARCH_DOCS = dict(
-    endpoint_url="http://search-cfa-healthtools-ke-doctors-m34xee6byjmzcgzmovevkjpffy.eu-west-1.cloudsearch.amazonaws.com/",
+    endpoint_url="https://doc-doctor-register-ke-ec4lclx2pcfn76nt26xreyxmee.eu-west-1.cloudsearch.amazonaws.com",
     aws_access_key_id=os.getenv("MORPH_AWS_ACCESS_KEY_ID"),
     aws_secret_access_key=os.getenv("MORPH_AWS_SECRET_KEY"),
     region_name=os.getenv("MORPH_AWS_REGION")
 )
+
+# Clinical officers domain
 CLOUDSEARCH_COS = dict(
     endpoint_url="http://doc-cfa-healthtools-ke-doctors-m34xee6byjmzcgzmovevkjpffy.eu-west-1.cloudsearch.amazonaws.com/",
     aws_access_key_id=os.getenv("MORPH_AWS_ACCESS_KEY_ID"),
