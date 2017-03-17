@@ -2,3 +2,6 @@
 data.sqlite
 
 starhealth_register*.json
+scraper2.py
+
+*.pyc
