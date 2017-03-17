@@ -2,9 +2,9 @@ import os
 
 # sites to be scraped
 SITES = {
-    "DOCTORS": "http://medicalboard.co.ke/online-services/retention/",
-    "FOREIGN_DOCTORS": "http://medicalboard.co.ke/online-services/foreign-doctors-license-register",
-    "CLINICAL_OFFICERS": "http://clinicalofficerscouncil.org/online-services/retention/",
+    "DOCTORS": "http://medicalboard.co.ke/online-services/retention/?currpage=%s",
+    "FOREIGN_DOCTORS": "http://medicalboard.co.ke/online-services/foreign-doctors-license-register/?currpage=%s",
+    "CLINICAL_OFFICERS": "http://clinicalofficerscouncil.org/online-services/retention/?currpage=%s",
 }
 
 # Doctors document endpoint
