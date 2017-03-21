@@ -1,6 +1,7 @@
-from healthtools_ke.config import SITES, CLOUDSEARCH_COS_ENDPOINT, CLOUDSEARCH_DOCTORS_ENDPOINT
+from healthtools_ke.config import SITES, CLOUDSEARCH_COS_ENDPOINT, CLOUDSEARCH_DOCTORS_ENDPOINT, S3_CONFIG
 from bs4 import BeautifulSoup
 from datetime import datetime
+from cStringIO import StringIO
 import requests
 import re
 import json
@@ -15,18 +16,25 @@ class Scraper(object):
         self.site_url = None
         self.fields = None
         self.cloudsearch = None
+        self.s3 = None
+        self.s3_key = None
 
     def scrape_site(self):
         '''
         Scrape the whole site
         '''
         self.get_total_number_of_pages()
+        all_results = []
         for page_num in range(1, self.num_pages_to_scrape + 1):
             print "Scraping page %s" % str(page_num)
             entries = self.scrape_page(self.site_url.format(page_num))
+            all_results.extend(entries)
             self.upload_data(json.dumps(entries))
             # print "Scraped {} entries from page {}".format(len(entries),
             # page_num)
+
+        self.archive_data(json.dumps(all_results))
+        return all_results
 
     def scrape_page(self, page_url):
         '''
@@ -62,15 +70,21 @@ class Scraper(object):
             response = self.cloudsearch.upload_documents(
                 documents=payload, contentType="application/json"
             )
-            print "DEBUG - upload_data() - {} - {}".format(len(payload), response.get("status"))
+            print "DEBUG - upload_data() - {} - {}".format(type(self).__name__, response.get("status"))
             return response
         except Exception as err:
-            print "ERROR - upload_data() - %s - %s" % (len(payload), str(err))
+            print "ERROR - upload_data() - {} - {}".format(type(self).__name__, str(err))
 
-    def archive_data():
+    def archive_data(self, payload):
         '''
-        Upload data to AWS S3 if changed
+        Upload scraped data to AWS S3
         '''
+        try:
+            file_obj = StringIO(payload)
+            response = self.s3.upload_fileobj(file_obj, "cfa-healthtools-ke", self.s3_key)
+            print "DEBUG - archive_data() - {}".format(self.s3_key)
+        except Exception as err:
+            print "ERROR - archive_data() - {} - {}".format(self.s3_key, str(err))
 
     def get_total_number_of_pages(self):
         '''
@@ -112,6 +126,8 @@ class DoctorsScraper(Scraper):
         ]
         self.cloudsearch = boto3.client(
             "cloudsearchdomain", **CLOUDSEARCH_DOCTORS_ENDPOINT)
+        self.s3 = boto3.client("s3", **S3_CONFIG)
+        self.s3_key = "doctors.json"
 
     def format_for_cloudsearch(self, entry):
         '''
@@ -128,11 +144,13 @@ class ForeignDoctorsScraper(Scraper):
         super(ForeignDoctorsScraper, self).__init__()
         self.site_url = SITES["FOREIGN_DOCTORS"]
         self.fields = [
-            "name", "postal_address", "qualifications", 
+            "name", "reg_no","postal_address", "qualifications", 
             "facility", "practice_type", "id",
         ]
         self.cloudsearch = boto3.client(
             "cloudsearchdomain", **CLOUDSEARCH_DOCTORS_ENDPOINT)
+        self.s3 = boto3.client("s3", **S3_CONFIG)
+        self.s3_key = "foreign_doctors.json"
 
     def format_for_cloudsearch(self, entry):
         '''
@@ -141,3 +159,16 @@ class ForeignDoctorsScraper(Scraper):
         entry["reg_date"] = "0000-01-01T00:00:00.000Z"
         entry["reg_no"] = entry["speciality"] = entry["sub_speciality"] = "-" 
         return {"id": entry["id"], "type": "add", "fields": entry}
+
+class ForeignDoctorsScraper(Scraper):
+    def __init__(self):
+        super(ForeignDoctorsScraper, self).__init__()
+        self.site_url = SITES["FOREIGN_DOCTORS"]
+        self.fields = [
+            "name", "reg_no","postal_address", "qualifications", 
+            "facility", "practice_type", "id",
+        ]
+        self.cloudsearch = boto3.client(
+            "cloudsearchdomain", **CLOUDSEARCH_DOCTORS_ENDPOINT)
+        self.s3 = boto3.client("s3", **S3_CONFIG)
+        self.s3_key = "foreign_doctors.json"
