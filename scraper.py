@@ -1,4 +1,6 @@
-from scrapers.engine import DoctorsScraper, ForeignDoctorsScraper, ClinicalOfficersScraper
+from healthtools.scrapers.doctors import DoctorsScraper
+from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
+from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
 
 if __name__ == "__main__":
     doctors_scraper = DoctorsScraper()
