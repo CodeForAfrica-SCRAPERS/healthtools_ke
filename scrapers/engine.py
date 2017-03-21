@@ -1,4 +1,4 @@
-from config import SITES, CLOUDSEARCH_COS_ENDPOINT, CLOUDSEARCH_DOCTORS_ENDPOINT, S3_CONFIG
+from healthtools_ke.config import SITES, CLOUDSEARCH_COS_ENDPOINT, CLOUDSEARCH_DOCTORS_ENDPOINT, S3_CONFIG
 from bs4 import BeautifulSoup
 from datetime import datetime
 from cStringIO import StringIO
@@ -18,6 +18,7 @@ class Scraper(object):
         self.cloudsearch = None
         self.s3 = None
         self.s3_key = None
+        self.document_id = 0  # id for each entry, to be incremented
 
     def scrape_site(self):
         '''
@@ -25,15 +26,26 @@ class Scraper(object):
         '''
         self.get_total_number_of_pages()
         all_results = []
-        for page_num in range(1, self.num_pages_to_scrape + 1):
-            print "Scraping page %s" % str(page_num)
-            entries = self.scrape_page(self.site_url.format(page_num))
-            all_results.extend(entries)
-            self.upload_data(json.dumps(entries))
-            # print "Scraped {} entries from page {}".format(len(entries),
-            # page_num)
+        skipped_pages = 0
 
-        self.archive_data(json.dumps(all_results))
+        print "Running {} ".format(type(self).__name__)
+        for page_num in range(1, self.num_pages_to_scrape + 1):
+            url = self.site_url.format(page_num)
+            try:
+                print "Scraping page %s" % str(page_num)
+                entries = self.scrape_page(url)
+                all_results.extend(entries)
+                print "Scraped {} entries from page {}".format(len(entries), page_num)
+            except Exception as err:
+                skipped_pages += 1
+                print "ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err)
+                continue
+        print "|{} completed. | {} entries retrieved. | {} pages skipped.".format(type(self).__name__,len(all_results), skipped_pages)
+
+        all_results_json = json.dumps(all_results)
+        self.upload_data(all_results_json)
+        self.archive_data(all_results_json)
+
         return all_results
 
     def scrape_page(self, page_url):
@@ -46,17 +58,16 @@ class Scraper(object):
             rows = table.find_all("tr")
 
             entries = []
-            _id = 0
             for row in rows:
                 # only the columns we want
                 # -1 because fields/columns has extra index; id
                 columns = row.find_all("td")[:len(self.fields) - 1]
                 columns = [text.text.strip() for text in columns]
-                columns.append(_id)
+                columns.append(self.document_id)
                 entry = dict(zip(self.fields, columns))
                 entry = self.format_for_cloudsearch(entry)
                 entries.append(entry)
-                _id += 1
+                self.document_id += 1
             return entries
         except Exception as err:
             print "ERROR: Failed to scrape data from page {}  -- {}".format(page_url, str(err))

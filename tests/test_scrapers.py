@@ -1,10 +1,9 @@
-from unittest import TestCase
 import unittest
 from healthtools_ke.scrapers.engine import DoctorsScraper, ForeignDoctorsScraper, ClinicalOfficersScraper
 import json
 
 
-class TestDoctorsScraper(TestCase):
+class TestDoctorsScraper(unittest.TestCase):
     def setUp(self):
         self.doctors_scraper = DoctorsScraper()
         self.foreign_doctors_scraper = ForeignDoctorsScraper()
