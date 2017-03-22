@@ -30,12 +30,12 @@ class Scraper(object):
                 print "Scraping page %s" % str(page_num)
                 entries = self.scrape_page(url)
                 all_results.extend(entries)
-                print "Scraped {} entries from page {}".format(len(entries), page_num)
+                print "Scraped {} entries from page {} | {}".format(len(entries), page_num, type(self).__name__)
             except Exception as err:
                 skipped_pages += 1
                 print "ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err)
                 continue
-        print "|{} completed. | {} entries retrieved. | {} pages skipped.".format(type(self).__name__,len(all_results), skipped_pages)
+        print "| {} completed. | {} entries retrieved. | {} pages skipped.".format(type(self).__name__, len(all_results), skipped_pages)
 
         all_results_json = json.dumps(all_results)
         self.upload_data(all_results_json)
@@ -58,7 +58,7 @@ class Scraper(object):
                 # -1 because fields/columns has extra index; id
                 columns = row.find_all("td")[:len(self.fields) - 1]
                 columns = [text.text.strip() for text in columns]
-                columns.append(self.document_id)
+                columns.append(self.generate_id())
                 entry = dict(zip(self.fields, columns))
                 entry = self.format_for_cloudsearch(entry)
                 entries.append(entry)
@@ -86,7 +86,8 @@ class Scraper(object):
         '''
         try:
             file_obj = StringIO(payload)
-            response = self.s3.upload_fileobj(file_obj, "cfa-healthtools-ke", self.s3_key)
+            response = self.s3.upload_fileobj(
+                file_obj, "cfa-healthtools-ke", self.s3_key)
             print "DEBUG - archive_data() - {}".format(self.s3_key)
         except Exception as err:
             print "ERROR - archive_data() - {} - {}".format(self.s3_key, str(err))
@@ -119,3 +120,8 @@ class Scraper(object):
         Format entry into cloudsearch ready document
         '''
         return {"id": entry["id"], "type": "add", "fields": entry}
+
+    def generate_id(self):
+        '''
+        Generate an id for an entry
+        '''

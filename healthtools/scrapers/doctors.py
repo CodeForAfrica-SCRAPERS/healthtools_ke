@@ -30,3 +30,10 @@ class DoctorsScraper(Scraper):
             date_obj, "%Y-%m-%dT%H:%M:%S.000Z")
         entry["facility"] = entry["practice_type"] = "-"
         return {"id": entry["id"], "type": "add", "fields": entry}
+
+    def generate_id(self):
+        '''
+        Generate an id for an entry
+        '''
+        _id = "415320151819" + str(self.document_id)
+        return int(_id)

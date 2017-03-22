@@ -27,3 +27,10 @@ class ForeignDoctorsScraper(Scraper):
         entry["reg_date"] = "0000-01-01T00:00:00.000Z"
         entry["reg_no"] = entry["speciality"] = entry["sub_speciality"] = "-"
         return {"id": entry["id"], "type": "add", "fields": entry}
+
+    def generate_id(self):
+        '''
+        Generate an id for an entry
+        '''
+        _id = "6151859714" + str(self.document_id)
+        return int(_id)
