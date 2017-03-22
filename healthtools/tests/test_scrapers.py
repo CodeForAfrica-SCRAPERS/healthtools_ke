@@ -2,6 +2,7 @@ import unittest
 from healthtools.scrapers.doctors import DoctorsScraper
 from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
 from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
+from healthtools.config import TEST_DIR
 
 
 class TestDoctorsScraper(unittest.TestCase):
@@ -42,25 +43,25 @@ class TestDoctorsScraper(unittest.TestCase):
         self.assertTrue(len(all_entries) > 0)
 
     def test_doctors_scraper_uploads_to_cloudsearch(self):
-        with open("tests/dummy_files/doctors.json", "r") as my_file:
+        with open(TEST_DIR + "/dummy_files/doctors.json", "r") as my_file:
             data = my_file.read()
             response = self.doctors_scraper.upload_data(data)
             self.assertEqual(response.get('status'), "success")
 
     def test_foreign_doctors_scraper_uploads_to_cloudsearch(self):
-        with open("tests/dummy_files/foreign_doctors.json", "r") as my_file:
+        with open(TEST_DIR + "/dummy_files/foreign_doctors.json", "r") as my_file:
             data = my_file.read()
             response = self.foreign_doctors_scraper.upload_data(data)
             self.assertEqual(response.get('status'), "success")
 
     def test_clinical_officers_scraper_uploads_to_cloudsearch(self):
-        with open("tests/dummy_files/clinical_officers.json", "r") as my_file:
+        with open(TEST_DIR + "/dummy_files/clinical_officers.json", "r") as my_file:
             data = my_file.read()
             response = self.clinical_officers_scraper.upload_data(data)
             self.assertEqual(response.get('status'), "success")
 
     def test_doctors_scraper_archives_to_s3(self):
-        with open("tests/dummy_files/doctors.json", "r") as my_file:
+        with open(TEST_DIR + "/dummy_files/doctors.json", "r") as my_file:
             data = my_file.read()
             self.doctors_scraper.archive_data(data)
         uploaded_data = self.doctors_scraper.s3.get_object(
@@ -73,7 +74,7 @@ class TestDoctorsScraper(unittest.TestCase):
             Key=self.doctors_scraper.s3_key)
 
     def test_foreign_doctors_scraper_archives_to_s3(self):
-        with open("tests/dummy_files/foreign_doctors.json", "r") as my_file:
+        with open(TEST_DIR + "/dummy_files/foreign_doctors.json", "r") as my_file:
             data = my_file.read()
             self.foreign_doctors_scraper.archive_data(data)
         uploaded_data = self.foreign_doctors_scraper.s3.get_object(
@@ -86,7 +87,7 @@ class TestDoctorsScraper(unittest.TestCase):
             Key=self.foreign_doctors_scraper.s3_key)
 
     def test_clinical_officers_scraper_archives_to_s3(self):
-        with open("tests/dummy_files/clinical_officers.json", "r") as my_file:
+        with open(TEST_DIR + "/dummy_files/clinical_officers.json", "r") as my_file:
             data = my_file.read()
             self.clinical_officers_scraper.archive_data(data)
         uploaded_data = self.clinical_officers_scraper.s3.get_object(
