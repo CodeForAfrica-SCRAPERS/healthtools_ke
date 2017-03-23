@@ -17,17 +17,17 @@ class TestDoctorsScraper(unittest.TestCase):
 
     def test_it_scrapes_doctors_page(self):
         entries = self.doctors_scraper.scrape_page(
-            "http://medicalboard.co.ke/online-services/retention/?currpage=1")
+            "http://medicalboard.co.ke/online-services/retention/?currpage=1")[0]
         self.assertTrue(len(entries[0]["fields"]) == 10)
 
     def test_it_scrapes_foreign_doctors_page(self):
         entries = self.foreign_doctors_scraper.scrape_page(
-            "http://medicalboard.co.ke/online-services/foreign-doctors-license-register/?currpage=1")
+            "http://medicalboard.co.ke/online-services/foreign-doctors-license-register/?currpage=1")[0]
         self.assertTrue(len(entries[0]["fields"]) == 10)
 
     def test_it_scrapes_clinical_officers_page(self):
         entries = self.clinical_officers_scraper.scrape_page(
-            "http://clinicalofficerscouncil.org/online-services/retention/?currpage=1")
+            "http://clinicalofficerscouncil.org/online-services/retention/?currpage=1")[0]
         self.assertTrue(len(entries[0]["fields"]) == 7)
 
     def test_it_scrapes_whole_doctors_site(self):
@@ -98,3 +98,7 @@ class TestDoctorsScraper(unittest.TestCase):
         self.clinical_officers_scraper.s3.delete_object(
             Bucket="cfa-healthtools-ke",
             Key=self.clinical_officers_scraper.s3_key)
+
+    def test_foreign_doctors_scraper_deletes_cloudsearch_docs(self):
+        response = self.foreign_doctors_scraper.delete_cloudsearch_docs()
+        self.assertEqual(response.get("status"), "success")

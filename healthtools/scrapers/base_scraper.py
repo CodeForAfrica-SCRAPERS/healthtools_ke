@@ -14,6 +14,7 @@ class Scraper(object):
         self.s3 = None
         self.s3_key = None
         self.document_id = 0  # id for each entry, to be incremented
+        self.delete_file = None  # contains docs to be deleted after scrape
 
     def scrape_site(self):
         '''
@@ -21,6 +22,7 @@ class Scraper(object):
         '''
         self.get_total_number_of_pages()
         all_results = []
+        delete_batch = []
         skipped_pages = 0
 
         print "Running {} ".format(type(self).__name__)
@@ -28,8 +30,12 @@ class Scraper(object):
             url = self.site_url.format(page_num)
             try:
                 print "Scraping page %s" % str(page_num)
-                entries = self.scrape_page(url)
+                scraped_page = self.scrape_page(url)
+                entries = scraped_page[0]
+                delete_docs = scraped_page[1]
+
                 all_results.extend(entries)
+                delete_batch.extend(delete_docs)
                 print "Scraped {} entries from page {} | {}".format(len(entries), page_num, type(self).__name__)
             except Exception as err:
                 skipped_pages += 1
@@ -37,11 +43,20 @@ class Scraper(object):
                 continue
         print "| {} completed. | {} entries retrieved. | {} pages skipped.".format(type(self).__name__, len(all_results), skipped_pages)
 
-        all_results_json = json.dumps(all_results)
-        self.upload_data(all_results_json)
-        self.archive_data(all_results_json)
+        if all_results:
+            all_results_json = json.dumps(all_results)
+            delete_batch = json.dumps(delete_batch)
 
-        return all_results
+            self.delete_cloudsearch_docs()
+            self.upload_data(all_results_json)
+            self.archive_data(all_results_json)
+
+            # store delete operations for next scrape
+            delete_file = open(self.delete_file, "w")
+            delete_file.write(delete_batch)
+            delete_file.close()
+
+            return all_results
 
     def scrape_page(self, page_url):
         '''
@@ -53,17 +68,21 @@ class Scraper(object):
             rows = table.find_all("tr")
 
             entries = []
+            delete_batch = []
             for row in rows:
                 # only the columns we want
                 # -1 because fields/columns has extra index; id
                 columns = row.find_all("td")[:len(self.fields) - 1]
                 columns = [text.text.strip() for text in columns]
                 columns.append(self.generate_id())
+
                 entry = dict(zip(self.fields, columns))
                 entry = self.format_for_cloudsearch(entry)
                 entries.append(entry)
+
+                delete_batch.append({"type": "delete", "id": entry["id"]})
                 self.document_id += 1
-            return entries
+            return entries, delete_batch
         except Exception as err:
             print "ERROR: Failed to scrape data from page {}  -- {}".format(page_url, str(err))
 
@@ -91,6 +110,24 @@ class Scraper(object):
             print "DEBUG - archive_data() - {}".format(self.s3_key)
         except Exception as err:
             print "ERROR - archive_data() - {} - {}".format(self.s3_key, str(err))
+
+    def delete_cloudsearch_docs(self):
+        '''
+        Delete documents that were uploaded to cloudsearch in the last scrape
+        '''
+        try:
+            # get documents to be deleted
+            with open(self.delete_file, "r") as delete_file:
+                delete_docs = delete_file.read()
+
+            # delete
+            response = self.cloudsearch.upload_documents(
+                documents=delete_docs, contentType="application/json"
+            )
+            print "DEBUG - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, response.get("status"))
+            return response
+        except Exception as err:
+            print "ERROR - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, str(err)) 
 
     def get_total_number_of_pages(self):
         '''
