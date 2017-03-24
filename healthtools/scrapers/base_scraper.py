@@ -1,8 +1,10 @@
 from bs4 import BeautifulSoup
 from cStringIO import StringIO
+from datetime import datetime
 import requests
 import re
 import json
+import hashlib
 
 
 class Scraper(object):
@@ -15,6 +17,7 @@ class Scraper(object):
         self.s3_key = None
         self.document_id = 0  # id for each entry, to be incremented
         self.delete_file = None  # contains docs to be deleted after scrape
+        self.s3_historical_record_key = None  # s3 historical_record key
 
     def scrape_site(self):
         '''
@@ -104,10 +107,26 @@ class Scraper(object):
         Upload scraped data to AWS S3
         '''
         try:
-            file_obj = StringIO(payload)
-            response = self.s3.upload_fileobj(
-                file_obj, "cfa-healthtools-ke", self.s3_key)
-            print "DEBUG - archive_data() - {}".format(self.s3_key)
+            old_etag = self.s3.get_object(
+                Bucket="cfa-healthtools-ke", Key=self.s3_key)["ETag"]
+            new_etag = hashlib.md5(payload).hexdigest()
+
+            if eval(old_etag) != new_etag:
+                file_obj = StringIO(payload)
+                self.s3.upload_fileobj(file_obj,
+                                       "cfa-healthtools-ke", self.s3_key)
+
+                # archive historical data
+                date = datetime.today().strftime('%Y%m%d')
+                s3_client.copy_object(Bucket="cfa-healthtools-ke",
+                                      CopySource="data/foreign_doctors.json",
+                                      Key=self.s3_historical_record_key.format(
+                                          date)
+                                      )
+                print "DEBUG - archive_data() - {}".format(self.s3_key)
+                return
+            else:
+                print "DEBUG - archive_data() - no change in archive"
         except Exception as err:
             print "ERROR - archive_data() - {} - {}".format(self.s3_key, str(err))
 
@@ -127,7 +146,10 @@ class Scraper(object):
             print "DEBUG - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, response.get("status"))
             return response
         except Exception as err:
-            print "ERROR - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, str(err)) 
+            if "[Errno 2]" in err:
+                print "ERROR - delete_cloudsearch_docs() - no delete file present"
+                return
+            print "ERROR - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, str(err))
 
     def get_total_number_of_pages(self):
         '''

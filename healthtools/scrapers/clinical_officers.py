@@ -20,6 +20,7 @@ class ClinicalOfficersScraper(Scraper):
             "cloudsearchdomain", **CLOUDSEARCH_COS_ENDPOINT)
         self.s3 = boto3.client("s3", **S3_CONFIG)
         self.s3_key = "data/clinical_officers.json"
+        self.s3_historical_record_key = "data/archive/clinical_officers-{}.json"
         self.delete_file = "delete_clinical_officers.json"
 
     def format_for_cloudsearch(self, entry):
