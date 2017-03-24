@@ -118,8 +118,8 @@ class Scraper(object):
 
                 # archive historical data
                 date = datetime.today().strftime('%Y%m%d')
-                s3_client.copy_object(Bucket="cfa-healthtools-ke",
-                                      CopySource="data/foreign_doctors.json",
+                self.s3.copy_object(Bucket="cfa-healthtools-ke",
+                                      CopySource="cfa-healthtools-ke/" + self.s3_key,
                                       Key=self.s3_historical_record_key.format(
                                           date)
                                       )
