@@ -30,7 +30,6 @@ class TestDoctorsScraper(unittest.TestCase):
             "http://clinicalofficerscouncil.org/online-services/retention/?currpage=1")[0]
         self.assertTrue(len(entries[0]["fields"]) == 7)
 
-    @unittest.skip('skip')
     def test_it_scrapes_whole_doctors_site(self):
         all_entries = self.doctors_scraper.scrape_site()
         self.assertTrue(len(all_entries) > 0)
@@ -39,7 +38,6 @@ class TestDoctorsScraper(unittest.TestCase):
         all_entries = self.foreign_doctors_scraper.scrape_site()
         self.assertTrue(len(all_entries) > 0)
 
-    @unittest.skip('skip')
     def test_it_scrapes_whole_clinical_officers_site(self):
         all_entries = self.clinical_officers_scraper.scrape_site()
         self.assertTrue(len(all_entries) > 0)

@@ -39,7 +39,13 @@ class Scraper(object):
             url = self.site_url.format(page_num)
             try:
                 print "Scraping page %s" % str(page_num)
+
+                self.retries = 0
                 scraped_page = self.scrape_page(url)
+                if type(scraped_page) != tuple:
+                    print "There's something wrong with the site. Proceeding to the next scraper."
+                    return
+
                 entries = scraped_page[0]
                 delete_docs = scraped_page[1]
 
@@ -94,7 +100,12 @@ class Scraper(object):
                 self.document_id += 1
             return entries, delete_batch
         except Exception as err:
-            print "ERROR: Failed to scrape data from page {}  -- {}".format(page_url, str(err))
+            if self.retries >= 5:
+                print "ERROR: Failed to scrape data from page {}  -- {}".format(page_url, str(err))
+                return err
+            else:
+                self.retries += 1
+                self.scrape_page(page_url)
 
     def upload_data(self, payload):
         '''
