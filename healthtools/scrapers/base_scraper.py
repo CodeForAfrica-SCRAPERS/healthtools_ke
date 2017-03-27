@@ -55,9 +55,10 @@ class Scraper(object):
             self.archive_data(all_results_json)
 
             # store delete operations for next scrape
-            delete_file = open(self.delete_file, "w")
-            delete_file.write(delete_batch)
-            delete_file.close()
+            delete_file = StringIO(delete_batch)
+            self.s3.upload_fileobj(
+                delete_file, "cfa-healthtools-ke",
+                self.delete_file)
 
             return all_results
 
@@ -119,10 +120,10 @@ class Scraper(object):
                 # archive historical data
                 date = datetime.today().strftime('%Y%m%d')
                 self.s3.copy_object(Bucket="cfa-healthtools-ke",
-                                      CopySource="cfa-healthtools-ke/" + self.s3_key,
-                                      Key=self.s3_historical_record_key.format(
-                                          date)
-                                      )
+                                    CopySource="cfa-healthtools-ke/" + self.s3_key,
+                                    Key=self.s3_historical_record_key.format(
+                                        date)
+                                    )
                 print "DEBUG - archive_data() - {}".format(self.s3_key)
                 return
             else:
@@ -136,8 +137,9 @@ class Scraper(object):
         '''
         try:
             # get documents to be deleted
-            with open(self.delete_file, "r") as delete_file:
-                delete_docs = delete_file.read()
+            delete_docs = self.s3.get_object(
+                Bucket="cfa-healthtools-ke",
+                Key=self.delete_file)['Body'].read()
 
             # delete
             response = self.cloudsearch.upload_documents(
@@ -146,7 +148,7 @@ class Scraper(object):
             print "DEBUG - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, response.get("status"))
             return response
         except Exception as err:
-            if "[Errno 2]" in err:
+            if "NoSuchKey" in err:
                 print "ERROR - delete_cloudsearch_docs() - no delete file present"
                 return
             print "ERROR - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, str(err))
@@ -184,3 +186,4 @@ class Scraper(object):
         '''
         Generate an id for an entry
         '''
+        pass

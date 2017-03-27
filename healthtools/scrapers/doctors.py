@@ -21,7 +21,7 @@ class DoctorsScraper(Scraper):
         self.s3 = boto3.client("s3", **S3_CONFIG)
         self.s3_key = "data/doctors.json"
         self.s3_historical_record_key = "data/archive/doctors-{}.json"
-        self.delete_file = "delete_doctors.json"
+        self.delete_file = "data/delete_doctors.json"
 
     def format_for_cloudsearch(self, entry):
         '''
