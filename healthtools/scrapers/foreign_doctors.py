@@ -1,5 +1,5 @@
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import SITES, CLOUDSEARCH_DOCTORS_ENDPOINT, S3_CONFIG
+from healthtools.config import SITES, AWS
 import boto3
 
 
@@ -16,8 +16,12 @@ class ForeignDoctorsScraper(Scraper):
             "facility", "practice_type", "id"
         ]
         self.cloudsearch = boto3.client(
-            "cloudsearchdomain", **CLOUDSEARCH_DOCTORS_ENDPOINT)
-        self.s3 = boto3.client("s3", **S3_CONFIG)
+            "cloudsearchdomain", **{
+                "aws_access_key_id": AWS["aws_access_key_id"],
+                "aws_secret_access_key": AWS["aws_secret_access_key"],
+                "region_name": AWS["region_name"],
+                "endpoint_url": AWS["cloudsearch_doctors_endpoint"]
+            })
         self.s3_key = "data/foreign_doctors.json"
         self.s3_historical_record_key = "data/archive/foreign_doctors-{}.json"
         self.delete_file = "data/delete_foreign_doctors.json"

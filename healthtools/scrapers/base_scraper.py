@@ -1,7 +1,9 @@
 from bs4 import BeautifulSoup
 from cStringIO import StringIO
 from datetime import datetime
+from healthtools.config import AWS
 import requests
+import boto3
 import re
 import json
 import hashlib
@@ -13,11 +15,15 @@ class Scraper(object):
         self.site_url = None
         self.fields = None
         self.cloudsearch = None
-        self.s3 = None
         self.s3_key = None
         self.document_id = 0  # id for each entry, to be incremented
         self.delete_file = None  # contains docs to be deleted after scrape
         self.s3_historical_record_key = None  # s3 historical_record key
+        self.s3 = boto3.client("s3", **{
+            "aws_access_key_id": AWS["aws_access_key_id"],
+            "aws_secret_access_key": AWS["aws_secret_access_key"],
+            "region_name": AWS["region_name"],
+        })
 
     def scrape_site(self):
         '''
