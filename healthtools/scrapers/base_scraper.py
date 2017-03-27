@@ -90,7 +90,7 @@ class Scraper(object):
                 # -1 because fields/columns has extra index; id
                 columns = row.find_all("td")[:len(self.fields) - 1]
                 columns = [text.text.strip() for text in columns]
-                columns.append(self.generate_id())
+                columns.append(self.document_id)
 
                 entry = dict(zip(self.fields, columns))
                 entry = self.format_for_cloudsearch(entry)
@@ -198,9 +198,3 @@ class Scraper(object):
         Format entry into cloudsearch ready document
         '''
         return {"id": entry["id"], "type": "add", "fields": entry}
-
-    def generate_id(self):
-        '''
-        Generate an id for an entry
-        '''
-        pass
