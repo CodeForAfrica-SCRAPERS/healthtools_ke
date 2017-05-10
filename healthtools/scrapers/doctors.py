@@ -32,7 +32,10 @@ class DoctorsScraper(Scraper):
         '''
         Format entry into cloudsearch ready document
         '''
-        date_obj = datetime.strptime(entry['reg_date'], "%Y-%m-%d")
+        try:
+            date_obj = datetime.strptime(entry['reg_date'], "%Y-%m-%d")
+        except:
+            date_obj = datetime.strptime(entry['reg_date'], "%d-%m-%Y")
         entry['reg_date'] = datetime.strftime(
             date_obj, "%Y-%m-%dT%H:%M:%S.000Z")
         entry["facility"] = entry["practice_type"] = "-"
