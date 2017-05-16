@@ -4,6 +4,8 @@ from datetime import datetime
 import requests
 import json
 import boto3
+import scraperwiki
+scraperwiki.config = { db: 'data.sqlite', default_table_name: 'data' }
 
 TOKEN_URL = 'http://api.kmhfl.health.go.ke/o/token/'
 SEARCH_URL = 'http://api.kmhfl.health.go.ke/api/facilities/material/?page_size=10000&' \
@@ -59,6 +61,7 @@ class HealthFacilitiesScraper(Scraper):
             print "DEBUG - get_data() - %s - %s" % (len(data['results']), r.reason)
             payload = ''
             for i, record in enumerate(data['results']):
+                scraperwiki.sqlite.save(unique_keys=['name'], data={"name": "susan", "occupation": "software developer"})
                 payload += self.index_for_cloudsearch(record) + ','
                 #Every 100th entry push to cloudsearch or if we have reached the end push to cloudsearch
                 if i % 100 == 0 or i == (len(data['results']) - 1):
@@ -98,3 +101,4 @@ class HealthFacilitiesScraper(Scraper):
         print "DEBUG - index_for_search() - %s - %s" % (len(payload), response.get("status"))
         except Exception, err:
           print "ERROR - index_for_search() - %s - %s" % (len(payload), err)
+
