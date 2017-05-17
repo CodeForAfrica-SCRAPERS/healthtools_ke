@@ -1,12 +1,30 @@
-from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import SITES, AWS
-from datetime import datetime
-import requests
 import json
+from healthtools.config import AWS
+import requests
 import boto3
-import scraperwiki
-scraperwiki.config = { db: 'data.sqlite', default_table_name: 'data' }
 
+health_facilities_template = """
+    {"type": "add",
+     "id":   "%s",
+     "fields": {
+              "name": "%s",
+              "facility_type_name": "%s",
+              "approved": "%s",
+              "sub_county_name": "%s",
+              "service_names": "%s",
+              "county_name": "%s",
+              "open_public_holidays": "%s",
+              "keph_level_name": "%s",
+              "open_whole_day": "%s",
+              "owner_name": "%s",
+              "constituency_name": "%s",
+              "regulatory_body_name": "%s",
+              "operation_status_name": "%s",
+              "open_late_night": "%s",
+              "open_weekends": "%s",
+              "ward_name": "%s"
+            }
+     }"""
 TOKEN_URL = 'http://api.kmhfl.health.go.ke/o/token/'
 SEARCH_URL = 'http://api.kmhfl.health.go.ke/api/facilities/material/?page_size=10000&' \
              'fields=id,regulatory_status_name,facility_type_name,facility_type_parent,owner_name,owner_type_name,' \
@@ -23,15 +41,9 @@ SEARCH_URL = 'http://api.kmhfl.health.go.ke/api/facilities/material/?page_size=1
              'keph_level,sub_county,town,regulation_status,contacts&format=json'
 
 
-class HealthFacilitiesScraper(Scraper):
+class HealthFacilitiesScraper(object):
     def __init__(self):
         self.access_token = None
-        self.fields = [
-            "name", "facility_type_name", "approved", "sub_county_name",
-            "service_names", "county_name", "open_public_holidays",
-            "keph_level_name", "open_whole_day", "owner_name",
-            "constituency_name", "regulatory_body_name", "operation_status_name", "open_late_night", "open_weekends", "ward_name"
-        ]
         self.cloudsearch = boto3.client(
             "cloudsearchdomain", **{
                 "aws_access_key_id": AWS["aws_access_key_id"],
@@ -51,7 +63,6 @@ class HealthFacilitiesScraper(Scraper):
         }
         r = requests.post(TOKEN_URL, data=data, headers=headers)
         self.access_token = json.loads(r.text)['access_token']
-        print self.access_token
 
     def get_data(self):
         try:
@@ -61,23 +72,22 @@ class HealthFacilitiesScraper(Scraper):
             print "DEBUG - get_data() - %s - %s" % (len(data['results']), r.reason)
             payload = ''
             for i, record in enumerate(data['results']):
-                scraperwiki.sqlite.save(unique_keys=['name'], data={"name": "susan", "occupation": "software developer"})
                 payload += self.index_for_cloudsearch(record) + ','
                 #Every 100th entry push to cloudsearch or if we have reached the end push to cloudsearch
                 if i % 100 == 0 or i == (len(data['results']) - 1):
                     payload = '[%s]' % payload[:-1] #remove last comma
-                    print i
+                    # print i
                     self.push_to_cloud_search(payload)
                     payload = ''
         except Exception, err:
-            print "ERROR - index_for_search() - %s" % (err)
+            print "ERROR IN - index_for_search() - %s" % (err)
 
     def index_for_cloudsearch(self, record):
-        return index_template.health_facilities_template  % (
+        return health_facilities_template  % (
             record['code'],
             record['name'].replace("\"","'"),
             record['facility_type_name'],
-            record['service_names'],
+            record['approved'],
             record['sub_county_name'],
             record['service_names'],
             record['county_name'],
@@ -95,10 +105,10 @@ class HealthFacilitiesScraper(Scraper):
 
     def push_to_cloud_search(self, payload):
         try:
-          response = self.cloudsearch.upload_documents(
-              documents=payload, contentType="application/json"
-          )
-        print "DEBUG - index_for_search() - %s - %s" % (len(payload), response.get("status"))
+            response = self.cloudsearch.upload_documents(
+                documents=payload, contentType="application/json"
+            )
+            print "DEBUG - index_for_search() - %s - %s" % (len(payload), response.get("status"))
         except Exception, err:
-          print "ERROR - index_for_search() - %s - %s" % (len(payload), err)
+            print "ERROR - index_for_search() - %s - %s" % (len(payload), err)
 
