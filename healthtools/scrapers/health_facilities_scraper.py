@@ -49,7 +49,7 @@ class HealthFacilitiesScraper(object):
                 "aws_access_key_id": AWS["aws_access_key_id"],
                 "aws_secret_access_key": AWS["aws_secret_access_key"],
                 "region_name": AWS["region_name"],
-                "endpoint_url": AWS["cloudsearch_doctors_endpoint"]
+                "endpoint_url": AWS["cloudsearch_health_faciities_endpoint"]
             })
 
     def get_token(self):

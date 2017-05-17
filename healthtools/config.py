@@ -17,7 +17,7 @@ AWS = {
     # Clinical document endpoint
     "cloudsearch_cos_endpoint": "http://doc-cfa-healthtools-ke-cos-nhxtw3w5goufkzram4er7sciz4.eu-west-1.cloudsearch.amazonaws.com/",
     # Health facilities endpoint
-    "cloudsearch_health_faciities_endpoint":" https://doc-health-facilities-ke-65ftd7ksxazyatw5fiv5uyaiqi.eu-west-1.cloudsearch.amazonaws.com",
+    "cloudsearch_health_faciities_endpoint":"https://doc-health-facilities-ke-65ftd7ksxazyatw5fiv5uyaiqi.eu-west-1.cloudsearch.amazonaws.com",
 
 }
 
