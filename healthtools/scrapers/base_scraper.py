@@ -127,10 +127,9 @@ class Scraper(object):
         try:
             old_etag = self.s3.get_object(
                 Bucket="cfa-healthtools-ke", Key=self.s3_key)["ETag"]
-            new_etag = hashlib.md5(payload).hexdigest()
-
+            new_etag = hashlib.md5(payload.encode('utf-8')).hexdigest()
             if eval(old_etag) != new_etag:
-                file_obj = StringIO(payload)
+                file_obj = StringIO(payload.encode('utf-8'))
                 self.s3.upload_fileobj(file_obj,
                                        "cfa-healthtools-ke", self.s3_key)
 
@@ -139,8 +138,7 @@ class Scraper(object):
                 self.s3.copy_object(Bucket="cfa-healthtools-ke",
                                     CopySource="cfa-healthtools-ke/" + self.s3_key,
                                     Key=self.s3_historical_record_key.format(
-                                        date)
-                                    )
+                                        date))
                 print "DEBUG - archive_data() - {}".format(self.s3_key)
                 return
             else:
