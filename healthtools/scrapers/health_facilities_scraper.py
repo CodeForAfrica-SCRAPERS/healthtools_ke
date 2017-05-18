@@ -1,9 +1,10 @@
-from healthtools.scrapers.base_scraper import Scraper
 import json
+from cStringIO import StringIO
+from healthtools.scrapers.base_scraper import Scraper
 from healthtools.config import AWS
 import requests
 import boto3
-from cStringIO import StringIO
+
 
 health_facilities_template = """
     {
