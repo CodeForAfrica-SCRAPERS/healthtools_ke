@@ -66,6 +66,7 @@ class HealthFacilitiesScraper(Scraper):
             })
 
     def get_token(self):
+        print "Running HealthFacilitiesScraper"
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         data = {
             'username': 'public@mfltest.slade360.co.ke',
@@ -82,18 +83,16 @@ class HealthFacilitiesScraper(Scraper):
             headers = {'Authorization': 'Bearer ' + self.access_token}
             r = requests.get(SEARCH_URL, headers=headers)
             data = r.json()
-            print "DEBUG - Total number of results - %s - %s" % (len(data['results']), r.reason)
             payload = ''
             delete_payload = ''
             for i, record in enumerate(data['results']):
-                print "Added {} documents".format(i)
                 payload += self.index_for_cloudsearch(record) + ','
                 delete_payload += self.delete_payload(record) + ','
             payload = '[%s]' % payload[:-1] #remove last comma
             delete_payload = '[%s]' % delete_payload[:-1] #remove last comma
             self.delete_cloudsearch_docs() #delete cloudsearch data
             self.upload_data(payload) #upload data to cloudsearch
-
+            print "| HealthFacilitiesScraper completed. | {} entries retrieved.".format(len(data['results']))
             # Push the data to s3
             self.archive_data(payload)
 
@@ -102,6 +101,8 @@ class HealthFacilitiesScraper(Scraper):
             self.s3.upload_fileobj(
                 delete_file, "cfa-healthtools-ke",
                 self.delete_file)
+
+            print " "
         except Exception, err:
             print "ERROR IN - index_for_search() - %s" % (err)
 

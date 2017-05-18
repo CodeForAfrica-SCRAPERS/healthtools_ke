@@ -38,8 +38,6 @@ class Scraper(object):
         for page_num in range(1, self.num_pages_to_scrape + 1):
             url = self.site_url.format(page_num)
             try:
-                print "Scraping page %s" % str(page_num)
-
                 self.retries = 0
                 scraped_page = self.scrape_page(url)
                 if type(scraped_page) != tuple:
@@ -51,7 +49,6 @@ class Scraper(object):
 
                 all_results.extend(entries)
                 delete_batch.extend(delete_docs)
-                print "Scraped {} entries from page {} | {}".format(len(entries), page_num, type(self).__name__)
             except Exception as err:
                 skipped_pages += 1
                 print "ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err)
@@ -115,7 +112,6 @@ class Scraper(object):
             response = self.cloudsearch.upload_documents(
                 documents=payload, contentType="application/json"
             )
-            print "DEBUG - upload_data() - {} - {}".format(type(self).__name__, response.get("status"))
             return response
         except Exception as err:
             print "ERROR - upload_data() - {} - {}".format(type(self).__name__, str(err))
@@ -142,7 +138,8 @@ class Scraper(object):
                 print "DEBUG - archive_data() - {}".format(self.s3_key)
                 return
             else:
-                print "DEBUG - archive_data() - no change in archive"
+                print "     DEBUG - archive_data() - no change in archive"
+                print " "
         except Exception as err:
             print "ERROR - archive_data() - {} - {}".format(self.s3_key, str(err))
 
@@ -160,7 +157,6 @@ class Scraper(object):
             response = self.cloudsearch.upload_documents(
                 documents=delete_docs, contentType="application/json"
             )
-            print "DEBUG - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, response.get("status"))
             return response
         except Exception as err:
             if "NoSuchKey" in err:
