@@ -130,3 +130,8 @@ class HealthFacilitiesScraper(Scraper):
 
     def delete_payload(self, record):
         return delete_template %(record['code'])
+
+    def scrape_data(self):
+        self.get_token()
+        self.get_data()
+
