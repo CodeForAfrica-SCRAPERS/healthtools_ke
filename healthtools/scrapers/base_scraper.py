@@ -38,8 +38,6 @@ class Scraper(object):
         for page_num in range(1, self.num_pages_to_scrape + 1):
             url = self.site_url.format(page_num)
             try:
-                print "Scraping page %s" % str(page_num)
-
                 self.retries = 0
                 scraped_page = self.scrape_page(url)
                 if type(scraped_page) != tuple:
@@ -51,7 +49,6 @@ class Scraper(object):
 
                 all_results.extend(entries)
                 delete_batch.extend(delete_docs)
-                print "Scraped {} entries from page {} | {}".format(len(entries), page_num, type(self).__name__)
             except Exception as err:
                 skipped_pages += 1
                 print "ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err)
@@ -115,7 +112,6 @@ class Scraper(object):
             response = self.cloudsearch.upload_documents(
                 documents=payload, contentType="application/json"
             )
-            print "DEBUG - upload_data() - {} - {}".format(type(self).__name__, response.get("status"))
             return response
         except Exception as err:
             print "ERROR - upload_data() - {} - {}".format(type(self).__name__, str(err))
@@ -127,10 +123,9 @@ class Scraper(object):
         try:
             old_etag = self.s3.get_object(
                 Bucket="cfa-healthtools-ke", Key=self.s3_key)["ETag"]
-            new_etag = hashlib.md5(payload).hexdigest()
-
+            new_etag = hashlib.md5(payload.encode('utf-8')).hexdigest()
             if eval(old_etag) != new_etag:
-                file_obj = StringIO(payload)
+                file_obj = StringIO(payload.encode('utf-8'))
                 self.s3.upload_fileobj(file_obj,
                                        "cfa-healthtools-ke", self.s3_key)
 
@@ -139,12 +134,12 @@ class Scraper(object):
                 self.s3.copy_object(Bucket="cfa-healthtools-ke",
                                     CopySource="cfa-healthtools-ke/" + self.s3_key,
                                     Key=self.s3_historical_record_key.format(
-                                        date)
-                                    )
+                                        date))
                 print "DEBUG - archive_data() - {}".format(self.s3_key)
                 return
             else:
-                print "DEBUG - archive_data() - no change in archive"
+                print "     DEBUG - archive_data() - no change in archive"
+                print " "
         except Exception as err:
             print "ERROR - archive_data() - {} - {}".format(self.s3_key, str(err))
 
@@ -162,7 +157,6 @@ class Scraper(object):
             response = self.cloudsearch.upload_documents(
                 documents=delete_docs, contentType="application/json"
             )
-            print "DEBUG - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, response.get("status"))
             return response
         except Exception as err:
             if "NoSuchKey" in err:
