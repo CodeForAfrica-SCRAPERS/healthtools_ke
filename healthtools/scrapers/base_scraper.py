@@ -34,7 +34,8 @@ class Scraper(object):
         delete_batch = []
         skipped_pages = 0
 
-        print "Running {} ".format(type(self).__name__)
+        print "[{0}] ".format(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
+        print "{{{0}}} - Started Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         for page_num in range(1, self.num_pages_to_scrape + 1):
             url = self.site_url.format(page_num)
             try:
@@ -53,7 +54,7 @@ class Scraper(object):
                 skipped_pages += 1
                 print "ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err)
                 continue
-        print "| {} completed. | {} entries retrieved. | {} pages skipped.".format(type(self).__name__, len(all_results), skipped_pages)
+        print "{{{0}}} - Scraper completed. {1} documents retrieved.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),len(all_results))
 
         if all_results:
             all_results_json = json.dumps(all_results)
@@ -68,6 +69,7 @@ class Scraper(object):
             self.s3.upload_fileobj(
                 delete_file, "cfa-healthtools-ke",
                 self.delete_file)
+            print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
             return all_results
 
@@ -135,11 +137,11 @@ class Scraper(object):
                                     CopySource="cfa-healthtools-ke/" + self.s3_key,
                                     Key=self.s3_historical_record_key.format(
                                         date))
-                print "DEBUG - archive_data() - {}".format(self.s3_key)
+                print "{{{0}}} - Archived data has been updated.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                 return
             else:
-                print "     DEBUG - archive_data() - no change in archive"
-                print " "
+                print "{{{0}}} - Data Scraped does not differ from archived data.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
         except Exception as err:
             print "ERROR - archive_data() - {} - {}".format(self.s3_key, str(err))
 

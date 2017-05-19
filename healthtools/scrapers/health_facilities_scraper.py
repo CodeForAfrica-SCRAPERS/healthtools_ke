@@ -4,7 +4,7 @@ from healthtools.scrapers.base_scraper import Scraper
 from healthtools.config import AWS
 import requests
 import boto3
-
+from datetime import datetime
 
 health_facilities_template = """
     {
@@ -66,7 +66,7 @@ class HealthFacilitiesScraper(Scraper):
             })
 
     def get_token(self):
-        print "Running HealthFacilitiesScraper"
+        print "[Health Facilities Scraper]"
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         data = {
             'username': 'public@mfltest.slade360.co.ke',
@@ -80,6 +80,7 @@ class HealthFacilitiesScraper(Scraper):
 
     def get_data(self):
         try:
+            print "{{{0}}} - Started Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             headers = {'Authorization': 'Bearer ' + self.access_token}
             r = requests.get(SEARCH_URL, headers=headers)
             data = r.json()
@@ -92,7 +93,7 @@ class HealthFacilitiesScraper(Scraper):
             delete_payload = '[%s]' % delete_payload[:-1] #remove last comma
             self.delete_cloudsearch_docs() #delete cloudsearch data
             self.upload_data(payload) #upload data to cloudsearch
-            print "| HealthFacilitiesScraper completed. | {} entries retrieved.".format(len(data['results']))
+            print "{{{0}}} - Scraper completed. {1} documents retrieved.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),len(data['results']))
             # Push the data to s3
             self.archive_data(payload)
 
@@ -101,8 +102,8 @@ class HealthFacilitiesScraper(Scraper):
             self.s3.upload_fileobj(
                 delete_file, "cfa-healthtools-ke",
                 self.delete_file)
+            print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-            print " "
         except Exception, err:
             print "ERROR IN - index_for_search() - %s" % (err)
 
