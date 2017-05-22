@@ -6,6 +6,7 @@ They retrieve data from the following sites:
 - Doctors: http://medicalboard.co.ke/online-services/retention/
 - Foreign doctors: http://medicalboard.co.ke/online-services/foreign-doctors-license-register
 - Clinical officers: http://clinicalofficerscouncil.org/online-services/retention/
+- Health Facilities: http://kmhfl.health.go.ke
 
 They currently run on morph.io.
 
