@@ -5,6 +5,9 @@ from healthtools.config import AWS
 import requests
 import boto3
 from datetime import datetime
+from elasticsearch import Elasticsearch
+
+es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
 
 health_facilities_template = """
     {
@@ -86,23 +89,36 @@ class HealthFacilitiesScraper(Scraper):
             data = r.json()
             payload = ''
             delete_payload = ''
-            for i, record in enumerate(data['results']):
-                payload += self.index_for_cloudsearch(record) + ','
-                delete_payload += self.delete_payload(record) + ','
-            payload = '[%s]' % payload[:-1] #remove last comma
-            delete_payload = '[%s]' % delete_payload[:-1] #remove last comma
-            self.delete_cloudsearch_docs() #delete cloudsearch data
-            self.upload_data(payload) #upload data to cloudsearch
-            print "{{{0}}} - Scraper completed. {1} documents retrieved.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),len(data['results']))
-            # Push the data to s3
-            self.archive_data(payload)
+            for i, record in enumerate(data['results'][0:10]):
+              print(i, "\n")
+              es.index(index='health_facilities', doc_type='healthdoc', id=i, body=record)
 
-            # Push the delete payload to s3
-            delete_file = StringIO(delete_payload)
-            self.s3.upload_fileobj(
-                delete_file, "cfa-healthtools-ke",
-                self.delete_file)
-            print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            man = es.get(index='health_facilities', doc_type='healthdoc', id=2)
+            import pdb; pdb.set_trace()
+
+
+
+            #     payload += self.index_for_cloudsearch(record) + ','
+            #     delete_payload += self.delete_payload(record) + ','
+            # payload = '[%s]' % payload[:-1] #remove last comma
+            # import pdb; pdb.set_trace()
+
+
+
+            # print type(payload)
+            # delete_payload = '[%s]' % delete_payload[:-1] #remove last comma
+            # self.delete_cloudsearch_docs() #delete cloudsearch data
+            # self.upload_data(payload) #upload data to cloudsearch
+            # print "{{{0}}} - Scraper completed. {1} documents retrieved.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),len(data['results']))
+            # # Push the data to s3
+            # self.archive_data(payload)
+
+            # # Push the delete payload to s3
+            # delete_file = StringIO(delete_payload)
+            # self.s3.upload_fileobj(
+            #     delete_file, "cfa-healthtools-ke",
+            #     self.delete_file)
+            # print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         except Exception, err:
             print "ERROR IN - index_for_search() - %s" % (err)
