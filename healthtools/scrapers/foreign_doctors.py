@@ -26,10 +26,10 @@ class ForeignDoctorsScraper(Scraper):
         self.s3_historical_record_key = "data/archive/foreign_doctors-{}.json"
         self.delete_file = "data/delete_foreign_doctors.json"
 
-    def format_for_cloudsearch(self, entry):
+    def format_doc(self, entry):
         '''
         Format entry into cloudsearch ready document
         '''
         entry["reg_date"] = "0000-01-01T00:00:00.000Z"
         entry["reg_no"] = entry["speciality"] = entry["sub_speciality"] = "-"
-        return {"id": entry["id"], "type": "add", "fields": entry}
+        return entry
