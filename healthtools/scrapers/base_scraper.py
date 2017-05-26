@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from cStringIO import StringIO
 from datetime import datetime
+from elasticsearch import Elasticsearch
 from healthtools.config import AWS
 import requests
 import boto3
@@ -8,7 +9,8 @@ import re
 import json
 import hashlib
 
-
+es = Elasticsearch([{'host': 'dokku-2.healthtools.codeforafrica.org', 'port': 8001}], timeout=1000)
+es.indices.delete(index='healthindex', ignore=[400, 404])
 class Scraper(object):
     def __init__(self):
         self.num_pages_to_scrape = None
@@ -42,7 +44,8 @@ class Scraper(object):
                 self.retries = 0
                 scraped_page = self.scrape_page(url)
                 if type(scraped_page) != tuple:
-                    print "There's something wrong with the site. Proceeding to the next scraper."
+                    print "There's something wrong with the site" \
+                     "Proceeding to the next scraper."
                     return
 
                 entries = scraped_page[0]
@@ -54,22 +57,15 @@ class Scraper(object):
                 skipped_pages += 1
                 print "ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err)
                 continue
-        print "{{{0}}} - Scraper completed. {1} documents retrieved.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),len(all_results))
+        print "{{{0}}} - Scraper completed. {1} documents retrieved.\
+        ".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), len(all_results))
 
         if all_results:
             all_results_json = json.dumps(all_results)
-            delete_batch = json.dumps(delete_batch)
-
-            self.delete_cloudsearch_docs()
-            self.upload_data(all_results_json)
+            self.push_to_elasticsearch(all_results)
             self.archive_data(all_results_json)
-
-            # store delete operations for next scrape
-            delete_file = StringIO(delete_batch)
-            self.s3.upload_fileobj(
-                delete_file, "cfa-healthtools-ke",
-                self.delete_file)
-            print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            format_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print "{{{0}}} - Completed Scraper.".format(format_date)
 
             return all_results
 
@@ -92,7 +88,7 @@ class Scraper(object):
                 columns.append(self.document_id)
 
                 entry = dict(zip(self.fields, columns))
-                entry = self.format_for_cloudsearch(entry)
+                entry = self.format_doc(entry)
                 entries.append(entry)
 
                 delete_batch.append({"type": "delete", "id": entry["id"]})
@@ -106,18 +102,6 @@ class Scraper(object):
                 self.retries += 1
                 self.scrape_page(page_url)
 
-    def upload_data(self, payload):
-        '''
-        Upload data to AWS Cloud Search
-        '''
-        try:
-            response = self.cloudsearch.upload_documents(
-                documents=payload, contentType="application/json"
-            )
-            return response
-        except Exception as err:
-            print "ERROR - upload_data() - {} - {}".format(type(self).__name__, str(err))
-
     def archive_data(self, payload):
         '''
         Upload scraped data to AWS S3
@@ -126,6 +110,7 @@ class Scraper(object):
             old_etag = self.s3.get_object(
                 Bucket="cfa-healthtools-ke", Key=self.s3_key)["ETag"]
             new_etag = hashlib.md5(payload.encode('utf-8')).hexdigest()
+
             if eval(old_etag) != new_etag:
                 file_obj = StringIO(payload.encode('utf-8'))
                 self.s3.upload_fileobj(file_obj,
@@ -137,34 +122,15 @@ class Scraper(object):
                                     CopySource="cfa-healthtools-ke/" + self.s3_key,
                                     Key=self.s3_historical_record_key.format(
                                         date))
-                print "{{{0}}} - Archived data has been updated.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                print "{{{0}}} - Archived data has been " \
+                "updated.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                 return
             else:
-                print "{{{0}}} - Data Scraped does not differ from archived data.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                print "{{{0}}} - Data Scraped does not differ from archived" \
+                 "data.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         except Exception as err:
             print "ERROR - archive_data() - {} - {}".format(self.s3_key, str(err))
-
-    def delete_cloudsearch_docs(self):
-        '''
-        Delete documents that were uploaded to cloudsearch in the last scrape
-        '''
-        try:
-            # get documents to be deleted
-            delete_docs = self.s3.get_object(
-                Bucket="cfa-healthtools-ke",
-                Key=self.delete_file)['Body'].read()
-
-            # delete
-            response = self.cloudsearch.upload_documents(
-                documents=delete_docs, contentType="application/json"
-            )
-            return response
-        except Exception as err:
-            if "NoSuchKey" in err:
-                print "ERROR - delete_cloudsearch_docs() - no delete file present"
-                return
-            print "ERROR - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, str(err))
 
     def get_total_number_of_pages(self):
         '''
@@ -173,6 +139,7 @@ class Scraper(object):
         try:
             soup = self.make_soup(self.site_url.format(1))  # get first page
             text = soup.find("div", {"id": "tnt_pagination"}).getText()
+
             # what number of pages looks like
             pattern = re.compile("(\d+) pages?")
             self.num_pages_to_scrape = int(pattern.search(text).group(1))
@@ -189,8 +156,15 @@ class Scraper(object):
         soup = BeautifulSoup(response.content, "html.parser")
         return soup
 
-    def format_for_cloudsearch(self, entry):
+    def format_doc(self, entry):
         '''
         Format entry into cloudsearch ready document
         '''
-        return {"id": entry["id"], "type": "add", "fields": entry}
+        return entry
+
+    def push_to_elasticsearch(self, result):
+        for i, record in enumerate(result):
+            es.index(index='healthindex', doc_type=type(self).__name__, id=i, body=record, timeout=1000)
+
+
+
