@@ -7,6 +7,7 @@ if __name__ == "__main__":
     doctors_scraper = DoctorsScraper()
     foreign_doctors_scraper = ForeignDoctorsScraper()
     clinical_officers_scraper = ClinicalOfficersScraper()
+
     healthfacilities_scraper.scrape_data()
     # scraping you softly with these bots...
     doctors_result = doctors_scraper.scrape_site()
