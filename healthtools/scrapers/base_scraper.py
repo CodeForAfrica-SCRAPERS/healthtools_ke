@@ -2,14 +2,18 @@ from bs4 import BeautifulSoup
 from cStringIO import StringIO
 from datetime import datetime
 from elasticsearch import Elasticsearch
-from healthtools.config import AWS
+from healthtools.config import AWS, ELASTICSEARCH
 import requests
 import boto3
 import re
 import json
 import hashlib
 
-es = Elasticsearch([{'host': 'dokku-2.healthtools.codeforafrica.org', 'port': 8001}], timeout=1000)
+print "the host na er {} {}".format(ELASTICSEARCH["host"], ELASTICSEARCH["port"])
+es = Elasticsearch([
+  {'host': ELASTICSEARCH["host"],
+  'port': ELASTICSEARCH["port"]}])
+
 es.indices.delete(index='healthindex', ignore=[400, 404])
 class Scraper(object):
     def __init__(self):
@@ -43,6 +47,7 @@ class Scraper(object):
             try:
                 self.retries = 0
                 scraped_page = self.scrape_page(url)
+                import pdb; pdb.set_trace()
                 if type(scraped_page) != tuple:
                     print "There's something wrong with the site" \
                      "Proceeding to the next scraper."
@@ -53,6 +58,7 @@ class Scraper(object):
 
                 all_results.extend(entries)
                 delete_batch.extend(delete_docs)
+
             except Exception as err:
                 skipped_pages += 1
                 print "ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err)
@@ -164,7 +170,7 @@ class Scraper(object):
 
     def push_to_elasticsearch(self, result):
         for i, record in enumerate(result):
-            es.index(index='healthindex', doc_type=type(self).__name__, id=i, body=record, timeout=1000)
+            es.index(index='healthindex', doc_type=type(self).__name__, id=i, body=record)
 
 
 
