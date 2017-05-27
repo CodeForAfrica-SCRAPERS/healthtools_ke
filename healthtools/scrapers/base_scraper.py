@@ -14,7 +14,6 @@ es = Elasticsearch([
   {'host': ELASTICSEARCH["host"],
   'port': ELASTICSEARCH["port"]}])
 
-es.indices.delete(index='healthindex', ignore=[400, 404])
 class Scraper(object):
     def __init__(self):
         self.num_pages_to_scrape = None
@@ -68,10 +67,9 @@ class Scraper(object):
 
         if all_results:
             all_results_json = json.dumps(all_results)
-            self.push_to_elasticsearch(all_results)
+            self.index_data(all_results)
             self.archive_data(all_results_json)
-            format_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            print "{{{0}}} - Completed Scraper.".format(format_date)
+            print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
             return all_results
 
@@ -168,9 +166,10 @@ class Scraper(object):
         '''
         return entry
 
-    def push_to_elasticsearch(self, result):
+    def index_data(self, result):
+        es.indices.delete(index=type(self).__name__, ignore=[400, 404])
         for i, record in enumerate(result):
-            es.index(index='healthindex', doc_type=type(self).__name__, id=i, body=record)
+            es.index(index=type(self).__name__, doc_type=type(self).__name__, id=i, body=record)
 
 
 
