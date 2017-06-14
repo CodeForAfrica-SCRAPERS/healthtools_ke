@@ -22,7 +22,7 @@ class Scraper(object):
         self.s3 = boto3.client("s3", **{
             "aws_access_key_id": AWS["aws_access_key_id"],
             "aws_secret_access_key": AWS["aws_secret_access_key"],
-            "region_name": AWS["region_name"],
+            "region_name": 'eu-west-1',
         })
 
     def scrape_site(self):
