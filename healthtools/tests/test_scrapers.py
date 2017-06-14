@@ -1,4 +1,5 @@
 import unittest
+import json
 from healthtools.scrapers.doctors import DoctorsScraper
 from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
 from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
@@ -18,47 +19,38 @@ class TestDoctorsScraper(unittest.TestCase):
     def test_it_scrapes_doctors_page(self):
         entries = self.doctors_scraper.scrape_page(
             "http://medicalboard.co.ke/online-services/retention/?currpage=1")[0]
-        self.assertTrue(len(entries[0]["fields"]) == 10)
+        self.assertTrue(len(entries) == 60)
 
     def test_it_scrapes_foreign_doctors_page(self):
         entries = self.foreign_doctors_scraper.scrape_page(
             "http://medicalboard.co.ke/online-services/foreign-doctors-license-register/?currpage=1")[0]
-        self.assertTrue(len(entries[0]["fields"]) == 10)
+        self.assertTrue(len(entries) == 60)
 
     def test_it_scrapes_clinical_officers_page(self):
         entries = self.clinical_officers_scraper.scrape_page(
             "http://clinicalofficerscouncil.org/online-services/retention/?currpage=1")[0]
-        self.assertTrue(len(entries[0]["fields"]) == 7)
+        self.assertTrue(len(entries) == 60)
 
-    def test_it_scrapes_whole_doctors_site(self):
-        all_entries = self.doctors_scraper.scrape_site()
-        self.assertTrue(len(all_entries) > 0)
-
-    def test_it_scrapes_whole_foreign_doctors_site(self):
-        all_entries = self.foreign_doctors_scraper.scrape_site()
-        self.assertTrue(len(all_entries) > 0)
-
-    def test_it_scrapes_whole_clinical_officers_site(self):
-        all_entries = self.clinical_officers_scraper.scrape_site()
-        self.assertTrue(len(all_entries) > 0)
-
-    def test_doctors_scraper_uploads_to_cloudsearch(self):
+    def test_doctors_scraper_uploads_to_elasticsearch(self):
         with open(TEST_DIR + "/dummy_files/doctors.json", "r") as my_file:
             data = my_file.read()
-            response = self.doctors_scraper.upload_data(data)
-            self.assertEqual(response.get('status'), "success")
+            self.doctors_scraper.delete_elasticsearch_docs()
+            response = self.doctors_scraper.upload_data(json.loads(data))
+            self.assertEqual(response['items'][0]['index']['status'], 201)
 
-    def test_foreign_doctors_scraper_uploads_to_cloudsearch(self):
+    def test_foreign_doctors_scraper_uploads_to_elasticsearch(self):
         with open(TEST_DIR + "/dummy_files/foreign_doctors.json", "r") as my_file:
             data = my_file.read()
-            response = self.foreign_doctors_scraper.upload_data(data)
-            self.assertEqual(response.get('status'), "success")
+            self.foreign_doctors_scraper.delete_elasticsearch_docs()
+            response = self.foreign_doctors_scraper.upload_data(json.loads(data))
+            self.assertEqual(response['items'][0]['index']['status'], 201)
 
-    def test_clinical_officers_scraper_uploads_to_cloudsearch(self):
+    def test_clinical_officers_scraper_uploads_to_elasticsearch(self):
         with open(TEST_DIR + "/dummy_files/clinical_officers.json", "r") as my_file:
             data = my_file.read()
-            response = self.clinical_officers_scraper.upload_data(data)
-            self.assertEqual(response.get('status'), "success")
+            self.clinical_officers_scraper.delete_elasticsearch_docs()
+            response = self.clinical_officers_scraper.upload_data(json.loads(data))
+            self.assertEqual(response['items'][0]['index']['status'], 201)
 
     def test_doctors_scraper_archives_to_s3(self):
         self.doctors_scraper.s3_key = "test/doctors.json"
@@ -68,7 +60,7 @@ class TestDoctorsScraper(unittest.TestCase):
         uploaded_data = self.doctors_scraper.s3.get_object(
             Bucket="cfa-healthtools-ke",
             Key=self.doctors_scraper.s3_key
-        )['Body'].read()
+            )['Body'].read()
         self.assertEqual(uploaded_data, data)
 
     def test_foreign_doctors_scraper_archives_to_s3(self):
@@ -79,7 +71,7 @@ class TestDoctorsScraper(unittest.TestCase):
         uploaded_data = self.foreign_doctors_scraper.s3.get_object(
             Bucket="cfa-healthtools-ke",
             Key=self.foreign_doctors_scraper.s3_key
-        )['Body'].read()
+            )['Body'].read()
         self.assertEqual(uploaded_data, data)
 
     def test_clinical_officers_scraper_archives_to_s3(self):
@@ -90,9 +82,6 @@ class TestDoctorsScraper(unittest.TestCase):
         uploaded_data = self.clinical_officers_scraper.s3.get_object(
             Bucket="cfa-healthtools-ke",
             Key=self.clinical_officers_scraper.s3_key
-        )['Body'].read()
+            )['Body'].read()
         self.assertEqual(uploaded_data, data)
 
-    def test_foreign_doctors_scraper_deletes_cloudsearch_docs(self):
-        response = self.foreign_doctors_scraper.delete_cloudsearch_docs()
-        self.assertEqual(response.get("status"), "success")
