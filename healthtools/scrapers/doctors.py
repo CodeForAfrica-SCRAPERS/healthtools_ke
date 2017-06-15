@@ -37,7 +37,7 @@ class DoctorsScraper(Scraper):
         meta_dict = {
             "index": {
                 "_index": ES['index'],
-                "_type": ES['doctors_type'],
+                "_type": 'doctors',
                 "_id": entry['id']
                 }
             }

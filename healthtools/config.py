@@ -26,7 +26,6 @@ ES = {
     "user": os.getenv("ES_USER"),
     "pass": os.getenv("ES_PASS"),
     "index": "healthtools",
-    "doctors_type": "doctors",
     "cos_type": "clinical-officers"
     }
 

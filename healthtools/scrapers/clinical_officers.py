@@ -36,7 +36,7 @@ class ClinicalOfficersScraper(Scraper):
         meta_dict = {
             "index": {
                 "_index": ES['index'],
-                "_type": ES['cos_type'],
+                "_type": 'clinical-officers',
                 "_id": entry['id']
                 }
             }

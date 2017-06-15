@@ -161,9 +161,12 @@ class Scraper(object):
         '''
         try:
             # get the type to use with the index depending on the calling method
-            _type = ES['cos_type'] \
-                if 'clinical' in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower() \
-                else ES['doctors_type']
+            if 'clinical' in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
+                _type = 'clinical-officers'
+            elif 'doctors' in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
+                _type = 'doctors'
+            else:
+                _type = 'health-facilities'
             # get documents to be deleted
             delete_docs = self.s3.get_object(
                 Bucket="cfa-healthtools-ke",
@@ -175,12 +178,20 @@ class Scraper(object):
                 # incase records are saved in cloudsearch's format, reformat for elasticsearch deletion
                 delete_records = []
                 for record in json.loads(delete_docs):
-                    delete_records.append({
-                        "delete": {
-                            "_index": ES['index'],
-                            "_type": _type,
-                            "_id": record['delete']["_id"]
-                            }})
+                    try:
+                        delete_records.append({
+                            "delete": {
+                                "_index": ES['index'],
+                                "_type": _type,
+                                "_id": record['delete']["_id"]
+                                }})
+                    except:
+                        delete_records.append({
+                            "delete": {
+                                "_index": ES['index'],
+                                "_type": _type,
+                                "_id": record["id"]
+                                }})
                 response = self.es_client.bulk(index=ES['index'], body=delete_records)
             return response
         except Exception as err:
