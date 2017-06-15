@@ -24,8 +24,13 @@ class Scraper(object):
             "aws_secret_access_key": AWS["aws_secret_access_key"],
             "region_name": AWS["region_name"],
             })
+        # client host for elastic cloud
+        # self.es_client = Elasticsearch([
+        #     "https://{}:{}@{}:{}".format(ES['user'], ES['pass'], ES['host'], ES['port'])
+        #     ])
         self.es_client = Elasticsearch([
-            "https://{}:{}@{}:{}".format(ES['user'], ES['pass'], ES['host'], ES['port'])
+            {"host": "localhost",
+             "port": 9200}
             ])
 
     def scrape_site(self):
