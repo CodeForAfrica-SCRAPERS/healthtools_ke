@@ -1,7 +1,7 @@
 import json
 from cStringIO import StringIO
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import ES, AWS
+from healthtools.config import ES
 import requests
 from datetime import datetime
 

@@ -1,8 +1,10 @@
 from bs4 import BeautifulSoup
 from cStringIO import StringIO
 from datetime import datetime
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, RequestsHttpConnection
+from requests_aws4auth import AWS4Auth
 from healthtools.config import AWS, ES
+from serializer import JSONSerializerPython2
 import requests
 import boto3
 import re
@@ -24,14 +26,18 @@ class Scraper(object):
             "aws_secret_access_key": AWS["aws_secret_access_key"],
             "region_name": AWS["region_name"],
             })
-        # client host for elastic cloud
-        self.es_client = Elasticsearch([
-            "https://{}:{}@{}:{}".format(ES['user'], ES['pass'], ES['host'], ES['port'])
-            ])
-        # self.es_client = Elasticsearch([
-        #     {"host": "localhost",
-        #      "port": 9200}
-        #     ])
+        # set up authentication credentials
+        awsauth = AWS4Auth(AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], 'es')
+        # client host for aws elastic search service
+        self.es_client = Elasticsearch(
+            hosts=ES['host'],
+            port=443,
+            http_auth=awsauth,
+            use_ssl=True,
+            verify_certs=True,
+            connection_class=RequestsHttpConnection,
+            serializer=JSONSerializerPython2()
+            )
 
     def scrape_site(self):
         '''
@@ -243,3 +249,5 @@ class Scraper(object):
                 }
             }
         return meta_dict, entry
+
+

@@ -23,10 +23,7 @@ AWS = {
 ES = {
     "host": os.getenv("ES_HOST"),
     "port": os.getenv("ES_PORT"),
-    "user": os.getenv("ES_USER"),
-    "pass": os.getenv("ES_PASS"),
-    "index": "healthtools",
-    "cos_type": "clinical-officers"
+    "index": "healthtools"
     }
 
 TEST_DIR = os.getcwd() + "/healthtools/tests"
