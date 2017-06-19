@@ -1,39 +1,11 @@
 import json
-from cStringIO import StringIO
+from datetime import datetime
 from healthtools.scrapers.base_scraper import Scraper
 from healthtools.config import AWS
 import requests
 import boto3
-from datetime import datetime
 
-health_facilities_template = """
-    {
-     "type": "add",
-     "id":   "%s",
-     "fields": {
-              "name": "%s",
-              "facility_type_name": "%s",
-              "approved": "%s",
-              "sub_county_name": "%s",
-              "service_names": "%s",
-              "county_name": "%s",
-              "open_public_holidays": "%s",
-              "keph_level_name": "%s",
-              "open_whole_day": "%s",
-              "owner_name": "%s",
-              "constituency_name": "%s",
-              "regulatory_body_name": "%s",
-              "operation_status_name": "%s",
-              "open_late_night": "%s",
-              "open_weekends": "%s",
-              "ward_name": "%s"
-            }
-    }"""
-delete_template = """
-    {
-    "type": "delete",
-    "id" : "%s"
-    }"""
+
 TOKEN_URL = 'http://api.kmhfl.health.go.ke/o/token/'
 SEARCH_URL = 'http://api.kmhfl.health.go.ke/api/facilities/material/?page_size=100000&' \
              'fields=id,regulatory_status_name,facility_type_name,facility_type_parent,owner_name,owner_type_name,' \
@@ -51,6 +23,9 @@ SEARCH_URL = 'http://api.kmhfl.health.go.ke/api/facilities/material/?page_size=1
 
 
 class HealthFacilitiesScraper(Scraper):
+    '''
+    Scraper for health facilities from kenya master health facilities list
+    '''
     def __init__(self):
         super(HealthFacilitiesScraper, self).__init__()
         self.access_token = None
@@ -73,63 +48,49 @@ class HealthFacilitiesScraper(Scraper):
             'password': 'public',
             'grant_type': 'password',
             'client_id': 'xMddOofHI0jOKboVxdoKAXWKpkEQAP0TuloGpfj5',
-            'client_secret': 'PHrUzCRFm9558DGa6Fh1hEvSCh3C9Lijfq8sbCMZhZqmANYV5ZP04mUXGJdsrZLXuZG4VCmvjShdKHwU6IRmPQld5LDzvJoguEP8AAXGJhrqfLnmtFXU3x2FO1nWLxUx'
+            'client_secret': 'PHrUzCRFm9558DGa6Fh1hEvSCh3C9Lijfq8sbCMZhZqmANYV5ZP04mUXGJdsrZLXu' \
+            'ZG4VCmvjShdKHwU6IRmPQld5LDzvJoguEP8AAXGJhrqfLnmtFXU3x2FO1nWLxUx'
         }
-        r = requests.post(TOKEN_URL, data=data, headers=headers)
-        self.access_token = json.loads(r.text)['access_token']
+        res = requests.post(TOKEN_URL, data=data, headers=headers)
+        self.access_token = json.loads(res.text)['access_token']
 
     def get_data(self):
         try:
             print "{{{0}}} - Started Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             headers = {'Authorization': 'Bearer ' + self.access_token}
-            r = requests.get(SEARCH_URL, headers=headers)
-            data = r.json()
-            payload = ''
-            delete_payload = ''
-            for i, record in enumerate(data['results']):
-                payload += self.index_for_cloudsearch(record) + ','
-                delete_payload += self.delete_payload(record) + ','
-            payload = '[%s]' % payload[:-1] #remove last comma
-            delete_payload = '[%s]' % delete_payload[:-1] #remove last comma
-            self.delete_cloudsearch_docs() #delete cloudsearch data
-            self.upload_data(payload) #upload data to cloudsearch
-            print "{{{0}}} - Scraper completed. {1} documents retrieved.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),len(data['results']))
-            # Push the data to s3
-            self.archive_data(payload)
+            res = requests.get(SEARCH_URL, headers=headers)
+            data = res.json()
+            results = data['results']
 
-            # Push the delete payload to s3
-            delete_file = StringIO(delete_payload)
-            self.s3.upload_fileobj(
-                delete_file, "cfa-healthtools-ke",
-                self.delete_file)
+            print "{{{0}}} - Scraper completed. {1} documents retrieved." \
+            "".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),len(data['results']))
+            self.push_to_elasticsearch(results[0:2])
+            self.archive_data(json.dumps(results))
             print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         except Exception, err:
             print "ERROR IN - index_for_search() - %s" % (err)
 
-    def index_for_cloudsearch(self, record):
-        return health_facilities_template  % (
-            record['code'],
-            record['name'].replace("\"", "'"),
-            record['facility_type_name'],
-            record['approved'],
-            record['sub_county_name'],
-            record['service_names'],
-            record['county_name'],
-            record['open_public_holidays'],
-            record['keph_level_name'],
-            record['open_whole_day'],
-            record['owner_name'],
-            record['constituency_name'],
-            record['regulatory_body_name'],
-            record['operation_status_name'],
-            record['open_late_night'],
-            record['open_weekends'],
-            record['ward_name'].decode("string_escape").replace('\\', ''),
-            )
-
-    def delete_payload(self, record):
-        return delete_template %(record['code'])
+    def format_doc(self, entry):
+        return {
+            "id":entry['code'],
+            "name":entry['name'].replace("\"", "'"),
+            "facility_type_name":entry['facility_type_name'],
+            "approved":entry['approved'],
+            "sub_county_name":entry['sub_county_name'],
+            "service_names":entry['service_names'],
+            "county_name":entry['county_name'],
+            "open_public_holidays":entry['open_public_holidays'],
+            "keph_level_name":entry['keph_level_name'],
+            "open_whole_day":entry['open_whole_day'],
+            "owner_name":entry['owner_name'],
+            "constituency_name":entry['constituency_name'],
+            "regulatory_body_name":entry['regulatory_body_name'],
+            "operation_status_name":entry['operation_status_name'],
+            "open_late_night":entry['open_late_night'],
+            "open_weekends":entry['open_weekends'],
+            "ward_name":entry['ward_name'].decode("string_escape").replace('\\', '')
+            }
 
     def scrape_data(self):
         self.get_token()

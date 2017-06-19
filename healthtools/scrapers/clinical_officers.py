@@ -28,11 +28,11 @@ class ClinicalOfficersScraper(Scraper):
         self.s3_historical_record_key = "data/archive/clinical_officers-{}.json"
         self.delete_file = "data/delete_clinical_officers.json"
 
-    def format_for_cloudsearch(self, entry):
+    def format_doc(self, entry):
         '''
         Format entry into cloudsearch ready document
         '''
         date_obj = datetime.strptime(entry['reg_date'], "%d-%m-%y %H:%M")
         entry['reg_date'] = datetime.strftime(
             date_obj, "%Y-%m-%dT%H:%M:%S.000Z")
-        return {"id": entry["id"], "type": "add", "fields": entry}
+        return entry
