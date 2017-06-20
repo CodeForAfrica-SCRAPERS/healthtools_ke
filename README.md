@@ -27,6 +27,8 @@ You can set the required environment variables like so
 $ export MORPH_AWS_REGION=<aws_region>
 $ export MORPH_AWS_ACCESS_KEY_ID= <aws_access_key_id>
 $ export MORPH_AWS_SECRET_KEY= <aws_secret_key>
+$ export ES_HOST='<elastic_search_host_endpoint>'
+$ export WEBHOOK_URL='<slack_webhook_url>'
 ```
 
 You can now run the scrapers `$ python scraper.py` (It might take a while and you might need to change the endpoints in config.py if you haven't authorization for them)
