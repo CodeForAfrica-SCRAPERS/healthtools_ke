@@ -27,3 +27,7 @@ ES = {
     }
 
 TEST_DIR = os.getcwd() + "/healthtools/tests"
+
+SLACK = {
+    "token": os.getenv("SLACK_API_TOKEN")
+    }

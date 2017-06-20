@@ -3,8 +3,9 @@ from cStringIO import StringIO
 from datetime import datetime
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
-from healthtools.config import AWS, ES
 from serializer import JSONSerializerPython2
+from healthtools.config import AWS, ES, SLACK
+from slackclient import SlackClient
 import requests
 import boto3
 import re
@@ -38,6 +39,7 @@ class Scraper(object):
             connection_class=RequestsHttpConnection,
             serializer=JSONSerializerPython2()
             )
+        self.slack_client = SlackClient(SLACK['token'])
 
     def scrape_site(self):
         '''
@@ -65,6 +67,11 @@ class Scraper(object):
                 delete_batch.extend(delete_docs)
             except Exception as err:
                 skipped_pages += 1
+                self.slack_client.api_call(
+                    "chat.postMessage",
+                    channel="#c4a",
+                    text="ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err)
+                    )
                 print "ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err)
                 continue
         print "{{{0}}} - Scraper completed. {1} documents retrieved.".format(
@@ -121,6 +128,11 @@ class Scraper(object):
             return entries, delete_batch
         except Exception as err:
             if self.retries >= 5:
+                self.slack_client.api_call(
+                    "chat.postMessage",
+                    channel="#c4a",
+                    text=" @channel check this out: ```ERROR: Failed to scrape data from page {}  -- {}```".format(page_url, str(err))
+                    )
                 print "ERROR: Failed to scrape data from page {}  -- {}".format(page_url, str(err))
                 return err
             else:
@@ -136,6 +148,11 @@ class Scraper(object):
             response = self.es_client.bulk(index=ES['index'], body=payload, refresh=True)
             return response
         except Exception as err:
+            self.slack_client.api_call(
+                "chat.postMessage",
+                channel="#c4a",
+                text="ERROR - upload_data() - {} - {}".format(type(self).__name__, str(err))
+                )
             print "ERROR - upload_data() - {} - {}".format(type(self).__name__, str(err))
 
     def archive_data(self, payload):
@@ -164,6 +181,11 @@ class Scraper(object):
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         except Exception as err:
+            self.slack_client.api_call(
+                "chat.postMessage",
+                channel="#c4a",
+                text="ERROR - archive_data() - {} - {}".format(self.s3_key, str(err))
+                )
             print "ERROR - archive_data() - {} - {}".format(self.s3_key, str(err))
 
     def delete_elasticsearch_docs(self):
@@ -207,9 +229,19 @@ class Scraper(object):
             return response
         except Exception as err:
             if "NoSuchKey" in err:
-                print "ERROR - delete_elasticsearch_docs() - no delete file present"
+                self.slack_client.api_call(
+                    "chat.postMessage",
+                    channel="#c4a",
+                    text="ERROR - delete_cloudsearch_docs() - no delete file present"
+                    )
+                print "ERROR - delete_cloudsearch_docs() - no delete file present"
                 return
-            print "ERROR - delete_elasticsearch_docs() - {} - {}".format(type(self).__name__, str(err))
+            self.slack_client.api_call(
+                "chat.postMessage",
+                channel="#c4a",
+                text="ERROR - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, str(err))
+                )
+            print "ERROR - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, str(err))
 
     def get_total_number_of_pages(self):
         '''
@@ -222,7 +254,12 @@ class Scraper(object):
             pattern = re.compile("(\d+) pages?")
             self.num_pages_to_scrape = int(pattern.search(text).group(1))
         except Exception as err:
-            print "ERROR: **get_total_page_numbers()** - url: {} - err: {}". \
+            self.slack_client.api_call(
+                "chat.postMessage",
+                channel="#c4a",
+                text="ERROR: **get_total_page_numbers()** - url: {} - err: {}".format(self.site_url, str(err))
+                )
+            print "ERROR: **get_total_page_numbers()** - url: {} - err: {}".\
                 format(self.site_url, str(err))
             return
 
