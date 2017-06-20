@@ -9,8 +9,8 @@ if __name__ == "__main__":
     clinical_officers_scraper = ClinicalOfficersScraper()
     healthfacilities_scraper.scrape_data()
     # scraping you softly with these bots...
+    clinical_officers_result = clinical_officers_scraper.scrape_site()
     doctors_result = doctors_scraper.scrape_site()
     if doctors_result:
         foreign_doctors_scraper.document_id = len(doctors_result) + 1
         foreign_docs_result = foreign_doctors_scraper.scrape_site()
-    clinical_officers_result = clinical_officers_scraper.scrape_site()
