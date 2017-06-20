@@ -5,7 +5,6 @@ from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 from serializer import JSONSerializerPython2
 from healthtools.config import AWS, ES, SLACK
-from slackclient import SlackClient
 import requests
 import boto3
 import re
@@ -39,7 +38,6 @@ class Scraper(object):
             connection_class=RequestsHttpConnection,
             serializer=JSONSerializerPython2()
             )
-        self.slack_client = SlackClient(SLACK['token'])
 
     def scrape_site(self):
         '''
@@ -67,10 +65,10 @@ class Scraper(object):
                 delete_batch.extend(delete_docs)
             except Exception as err:
                 skipped_pages += 1
-                self.slack_client.api_call(
-                    "chat.postMessage",
-                    channel="#c4a",
-                    text="ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err)
+                requests.post(
+                    SLACK['url'],
+                    data=json.dumps({"text": "```ERROR: scrape_site() - source: {} - page: {} - {}```".format(url, page_num, err)}),
+                    headers={'Content-Type': 'application/json'}
                     )
                 print "ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err)
                 continue
@@ -128,10 +126,11 @@ class Scraper(object):
             return entries, delete_batch
         except Exception as err:
             if self.retries >= 5:
-                self.slack_client.api_call(
-                    "chat.postMessage",
-                    channel="#c4a",
-                    text=" @channel check this out: ```ERROR: Failed to scrape data from page {}  -- {}```".format(page_url, str(err))
+                requests.post(
+                    SLACK['url'],
+                    data=json.dumps(
+                        {"text": "```ERROR: Failed to scrape data from page {}  -- {}```".format(page_url, str(err))}),
+                    headers={'Content-Type': 'application/json'}
                     )
                 print "ERROR: Failed to scrape data from page {}  -- {}".format(page_url, str(err))
                 return err
@@ -148,10 +147,11 @@ class Scraper(object):
             response = self.es_client.bulk(index=ES['index'], body=payload, refresh=True)
             return response
         except Exception as err:
-            self.slack_client.api_call(
-                "chat.postMessage",
-                channel="#c4a",
-                text="ERROR - upload_data() - {} - {}".format(type(self).__name__, str(err))
+            requests.post(
+                SLACK['url'],
+                data=json.dumps(
+                    {"text": "```ERROR - upload_data() - {} - {}```".format(type(self).__name__, str(err))}),
+                headers={'Content-Type': 'application/json'}
                 )
             print "ERROR - upload_data() - {} - {}".format(type(self).__name__, str(err))
 
@@ -181,10 +181,11 @@ class Scraper(object):
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         except Exception as err:
-            self.slack_client.api_call(
-                "chat.postMessage",
-                channel="#c4a",
-                text="ERROR - archive_data() - {} - {}".format(self.s3_key, str(err))
+            requests.post(
+                SLACK['url'],
+                data=json.dumps(
+                    {"text": "```ERROR - archive_data() - {} - {}```".format(self.s3_key, str(err))}),
+                headers={'Content-Type': 'application/json'}
                 )
             print "ERROR - archive_data() - {} - {}".format(self.s3_key, str(err))
 
@@ -229,17 +230,18 @@ class Scraper(object):
             return response
         except Exception as err:
             if "NoSuchKey" in err:
-                self.slack_client.api_call(
-                    "chat.postMessage",
-                    channel="#c4a",
-                    text="ERROR - delete_cloudsearch_docs() - no delete file present"
+                requests.post(
+                    SLACK['url'],
+                    data=json.dumps(
+                        {"text": "```ERROR - delete_cloudsearch_docs() - no delete file present```"}),
+                    headers={'Content-Type': 'application/json'}
                     )
                 print "ERROR - delete_cloudsearch_docs() - no delete file present"
                 return
-            self.slack_client.api_call(
-                "chat.postMessage",
-                channel="#c4a",
-                text="ERROR - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, str(err))
+            requests.post(
+                SLACK['url'],
+                data=json.dumps({"text": "```ERROR - delete_cloudsearch_docs() - {} - {}```".format(type(self).__name__, str(err))}),
+                headers={'Content-Type': 'application/json'}
                 )
             print "ERROR - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, str(err))
 
@@ -254,10 +256,11 @@ class Scraper(object):
             pattern = re.compile("(\d+) pages?")
             self.num_pages_to_scrape = int(pattern.search(text).group(1))
         except Exception as err:
-            self.slack_client.api_call(
-                "chat.postMessage",
-                channel="#c4a",
-                text="ERROR: **get_total_page_numbers()** - url: {} - err: {}".format(self.site_url, str(err))
+            requests.post(
+                SLACK['url'],
+                data=json.dumps(
+                    {"text": "```ERROR: **get_total_page_numbers()** - url: {} - err: {}```".format(self.site_url, str(err))}),
+                headers={'Content-Type': 'application/json'}
                 )
             print "ERROR: **get_total_page_numbers()** - url: {} - err: {}".\
                 format(self.site_url, str(err))
