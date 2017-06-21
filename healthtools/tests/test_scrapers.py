@@ -73,6 +73,18 @@ class TestDoctorsScraper(unittest.TestCase):
             )['Body'].read()
         self.assertEqual(uploaded_data, data)
 
+    # get test/health_facilities.json key for this test
+    # def test_health_facilities_scraper_archives_to_s3(self):
+    #     self.health_facilities_scraper.s3_key = "test/health_facilities.json"
+    #     with open(TEST_DIR + "/dummy_files/health_facilities.json", "r") as my_file:
+    #         data = my_file.read()
+    #         self.health_facilities_scraper.archive_data(data)
+    #     uploaded_data = self.health_facilities_scraper.s3.get_object(
+    #         Bucket="cfa-healthtools-ke",
+    #         Key=self.health_facilities_scraper.s3_key
+    #         )['Body'].read()
+    #     self.assertEqual(uploaded_data, data)
+
     def test_foreign_doctors_scraper_archives_to_s3(self):
         self.foreign_doctors_scraper.s3_key = "test/foreign_doctors.json"
         with open(TEST_DIR + "/dummy_files/foreign_doctors.json", "r") as my_file:
@@ -106,3 +118,4 @@ class TestDoctorsScraper(unittest.TestCase):
             headers={'Content-Type': 'application/json'}
             )
         self.assertEqual(response.status_code, 200)
+
