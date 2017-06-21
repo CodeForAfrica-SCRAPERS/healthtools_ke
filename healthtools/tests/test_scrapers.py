@@ -1,6 +1,7 @@
 import unittest
 import requests
 import json
+from healthtools.scrapers.base_scraper import Scraper
 from healthtools.scrapers.doctors import DoctorsScraper
 from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
 from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
@@ -10,6 +11,7 @@ from healthtools.config import TEST_DIR, SLACK
 
 class TestDoctorsScraper(unittest.TestCase):
     def setUp(self):
+        self.base_scraper = Scraper()
         self.doctors_scraper = DoctorsScraper()
         self.foreign_doctors_scraper = ForeignDoctorsScraper()
         self.clinical_officers_scraper = ClinicalOfficersScraper()
@@ -100,9 +102,5 @@ class TestDoctorsScraper(unittest.TestCase):
         self.assertIsNotNone(self.health_facilities_scraper.access_token)
 
     def test_scrapper_sends_slack_notification(self):
-        response = requests.post(
-            SLACK['url'],
-            data=json.dumps({"text": "*This test is passing* :tada:"}),
-            headers={'Content-Type': 'application/json'}
-            )
+        response = self.base_scraper.post_to_slack("Tests are passing")
         self.assertEqual(response.status_code, 200)

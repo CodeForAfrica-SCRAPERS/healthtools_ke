@@ -1,7 +1,7 @@
 import json
 from cStringIO import StringIO
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import ES, SLACK
+from healthtools.config import ES
 import requests
 from datetime import datetime
 
@@ -73,12 +73,7 @@ class HealthFacilitiesScraper(Scraper):
             print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         except Exception as err:
-            requests.post(
-                SLACK['url'],
-                data=json.dumps(
-                    {"text": "```ERROR IN - index_for_search() Health Facilities Scraper - %s```" % err}),
-                headers={'Content-Type': 'application/json'}
-                )
+            self.post_to_slack("ERROR IN - index_for_search() Health Facilities Scraper - {}" % err)
             print "ERROR IN - index_for_search() Health Facilities Scraper - %s" % err
 
     def index_for_elasticsearch(self, record):
