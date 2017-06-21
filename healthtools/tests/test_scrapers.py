@@ -1,5 +1,4 @@
 import unittest
-import requests
 import json
 from healthtools.scrapers.base_scraper import Scraper
 from healthtools.scrapers.doctors import DoctorsScraper
@@ -104,3 +103,4 @@ class TestDoctorsScraper(unittest.TestCase):
     def test_scrapper_sends_slack_notification(self):
         response = self.base_scraper.post_to_slack("Tests are passing")
         self.assertEqual(response.status_code, 200)
+
