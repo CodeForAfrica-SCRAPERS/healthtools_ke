@@ -101,6 +101,6 @@ class TestDoctorsScraper(unittest.TestCase):
         self.assertIsNotNone(self.health_facilities_scraper.access_token)
 
     def test_scrapper_sends_slack_notification(self):
-        response = self.base_scraper.post_to_slack("Tests are passing")
+        response = self.base_scraper.print_error("Tests are passing")
         self.assertEqual(response.status_code, 200)
 
