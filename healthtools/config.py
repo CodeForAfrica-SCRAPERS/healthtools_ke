@@ -11,19 +11,15 @@ SITES = {
 AWS = {
     "aws_access_key_id": os.getenv("MORPH_AWS_ACCESS_KEY_ID"),
     "aws_secret_access_key": os.getenv("MORPH_AWS_SECRET_KEY"),
-    "region_name": os.getenv("MORPH_AWS_REGION"),
-    # Doctors document endpoint
-    "cloudsearch_doctors_endpoint": "http://doc-cfa-healthtools-ke-doctors-m34xee6byjmzcgzmovevkjpffy.eu-west-1.cloudsearch.amazonaws.com/",
-    # Clinical document endpoint
-    "cloudsearch_cos_endpoint": "http://doc-cfa-healthtools-ke-cos-nhxtw3w5goufkzram4er7sciz4.eu-west-1.cloudsearch.amazonaws.com/",
-    # Health facilities endpoint
-    "cloudsearch_health_faciities_endpoint": "https://doc-health-facilities-ke-65ftd7ksxazyatw5fiv5uyaiqi.eu-west-1.cloudsearch.amazonaws.com",
-
+    "region_name": os.getenv("MORPH_AWS_REGION", 'eu-west-1')
     }
 ES = {
     "host": os.getenv("ES_HOST"),
-    "port": os.getenv("ES_PORT"),
     "index": "healthtools"
     }
 
 TEST_DIR = os.getcwd() + "/healthtools/tests"
+
+SLACK = {
+    "url": os.getenv("WEBHOOK_URL")
+    }

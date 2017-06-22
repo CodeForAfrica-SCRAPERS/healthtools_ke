@@ -1,14 +1,16 @@
 import unittest
 import json
+from healthtools.scrapers.base_scraper import Scraper
 from healthtools.scrapers.doctors import DoctorsScraper
 from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
 from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
 from healthtools.scrapers.health_facilities import HealthFacilitiesScraper
-from healthtools.config import TEST_DIR
+from healthtools.config import TEST_DIR, SLACK
 
 
 class TestDoctorsScraper(unittest.TestCase):
     def setUp(self):
+        self.base_scraper = Scraper()
         self.doctors_scraper = DoctorsScraper()
         self.foreign_doctors_scraper = ForeignDoctorsScraper()
         self.clinical_officers_scraper = ClinicalOfficersScraper()
@@ -72,18 +74,6 @@ class TestDoctorsScraper(unittest.TestCase):
             )['Body'].read()
         self.assertEqual(uploaded_data, data)
 
-    # get test/health_facilities.json key for this test
-    # def test_health_facilities_scraper_archives_to_s3(self):
-    #     self.health_facilities_scraper.s3_key = "test/health_facilities.json"
-    #     with open(TEST_DIR + "/dummy_files/health_facilities.json", "r") as my_file:
-    #         data = my_file.read()
-    #         self.health_facilities_scraper.archive_data(data)
-    #     uploaded_data = self.health_facilities_scraper.s3.get_object(
-    #         Bucket="cfa-healthtools-ke",
-    #         Key=self.health_facilities_scraper.s3_key
-    #         )['Body'].read()
-    #     self.assertEqual(uploaded_data, data)
-
     def test_foreign_doctors_scraper_archives_to_s3(self):
         self.foreign_doctors_scraper.s3_key = "test/foreign_doctors.json"
         with open(TEST_DIR + "/dummy_files/foreign_doctors.json", "r") as my_file:
@@ -109,3 +99,8 @@ class TestDoctorsScraper(unittest.TestCase):
     def test_health_facilities_scraper_gets_token(self):
         self.health_facilities_scraper.get_token()
         self.assertIsNotNone(self.health_facilities_scraper.access_token)
+
+    def test_scrapper_sends_slack_notification(self):
+        response = self.base_scraper.print_error("Tests are passing")
+        self.assertEqual(response.status_code, 200)
+

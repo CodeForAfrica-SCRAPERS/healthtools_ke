@@ -73,7 +73,7 @@ class HealthFacilitiesScraper(Scraper):
             print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         except Exception as err:
-            print "ERROR IN - index_for_search() Health Facilities Scraper - %s" % err
+            self.print_error("ERROR IN - index_for_search() Health Facilities Scraper - {}" % err)
 
     def index_for_elasticsearch(self, record):
         meta_data = {"index": {
