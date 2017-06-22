@@ -24,7 +24,7 @@ class Scraper(object):
         self.s3 = boto3.client("s3", **{
             "aws_access_key_id": AWS["aws_access_key_id"],
             "aws_secret_access_key": AWS["aws_secret_access_key"],
-            "region_name": AWS["region_name"],
+            "region_name": AWS["region_name"]
             })
         # set up authentication credentials
         awsauth = AWS4Auth(AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], 'es')
@@ -43,13 +43,15 @@ class Scraper(object):
         '''
         Scrape the whole site
         '''
-        self.get_total_number_of_pages()
+        print "[{0}] ".format(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
+        print "[{0}] Started Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
         all_results = []
         delete_batch = []
         skipped_pages = 0
 
-        print "[{0}] ".format(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
-        print "[{0}] - Started Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        self.get_total_number_of_pages()
+
         for page_num in range(1, self.num_pages_to_scrape + 1):
             url = self.site_url.format(page_num)
             try:
@@ -67,7 +69,7 @@ class Scraper(object):
                 skipped_pages += 1
                 self.print_error("ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err))
                 continue
-        print "{{{0}}} - Scraper completed. {1} documents retrieved.".format(
+        print "[{0}] - Scraper completed. {1} documents retrieved.".format(
             datetime.now().strftime('%Y-%m-%d %H:%M:%S'), len(all_results))
 
         if all_results:
@@ -157,10 +159,10 @@ class Scraper(object):
                                     CopySource="cfa-healthtools-ke/" + self.s3_key,
                                     Key=self.s3_historical_record_key.format(
                                         date))
-                print "{{{0}}} - Archived data has been updated.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                print "[{0}] - Archived data has been updated.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                 return
             else:
-                print "{{{0}}} - Data Scraped does not differ from archived data.".format(
+                print "[{0}] - Data Scraped does not differ from archived data.".format(
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         except Exception as err:
@@ -207,9 +209,9 @@ class Scraper(object):
             return response
         except Exception as err:
             if "NoSuchKey" in err:
-                self.print_error("ERROR - delete_cloudsearch_docs() - no delete file present")
+                self.print_error("ERROR - delete_elasticsearch_docs() - no delete file present")
                 return
-            self.print_error("ERROR - delete_cloudsearch_docs() - {} - {}".format(type(self).__name__, str(err)))
+            self.print_error("ERROR - delete_elasticsearch_docs() - {} - {}".format(type(self).__name__, str(err)))
 
     def get_total_number_of_pages(self):
         '''
@@ -261,4 +263,3 @@ class Scraper(object):
             headers={'Content-Type': 'application/json'}
             )
         return response
-

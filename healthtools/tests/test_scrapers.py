@@ -103,4 +103,3 @@ class TestDoctorsScraper(unittest.TestCase):
     def test_scrapper_sends_slack_notification(self):
         response = self.base_scraper.print_error("Tests are passing")
         self.assertEqual(response.status_code, 200)
-
