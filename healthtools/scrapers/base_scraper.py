@@ -24,7 +24,7 @@ class Scraper(object):
         self.s3 = boto3.client("s3", **{
             "aws_access_key_id": AWS["aws_access_key_id"],
             "aws_secret_access_key": AWS["aws_secret_access_key"],
-            "region_name": AWS["region_name"],
+            "region_name": AWS["region_name"]
             })
         # set up authentication credentials
         awsauth = AWS4Auth(AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], 'es')
