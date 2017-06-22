@@ -40,10 +40,14 @@ For mac users run `brew install elasticsearch` on your terminal
 
 Set up `Incoming Webhooks` [here](https://slack.com/signin?redir=%2Fservices%2Fnew%2Fincoming-webhook) and set the global environment for the `WEBHOOK_URL`
 
+If you set up elasticsearch locally run it `$ elasticsearch`
+
 You can now run the scrapers `$ python scraper.py` (It might take a while)
 
 
 ## Running the tests
+_**make sure if you use elasticsearch locally, it's running**_
 
 Use nosetests to run tests (with stdout) like this:
 ```$ nosetests --nocapture```
+
