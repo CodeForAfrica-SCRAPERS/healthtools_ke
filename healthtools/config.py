@@ -14,12 +14,12 @@ AWS = {
     "region_name": os.getenv("MORPH_AWS_REGION", 'eu-west-1')
     }
 ES = {
-    "host": os.getenv("ES_HOST"),
+    "host": os.getenv("ES_HOST", None),
     "index": "healthtools"
     }
 
 TEST_DIR = os.getcwd() + "/healthtools/tests"
 
 SLACK = {
-    "url": os.getenv("WEBHOOK_URL")
+    "url": os.getenv("WEBHOOK_URL", None)
     }
