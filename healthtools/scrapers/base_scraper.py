@@ -253,7 +253,7 @@ class Scraper(object):
         """
         post messages to slack and print them on the terminal
         """
-        print(message)
+        print('{{{0}}} - '.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')) + message)
         response = requests.post(
             SLACK['url'],
             data=json.dumps(
