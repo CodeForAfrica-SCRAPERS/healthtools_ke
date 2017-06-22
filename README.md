@@ -24,10 +24,9 @@ Install the dependencies by running `$ pip install requirements.txt`
 
 You can set the required environment variables like so
 ```
-$ export MORPH_AWS_REGION=<aws_region>
-$ export MORPH_AWS_ACCESS_KEY_ID= <aws_access_key_id>
-$ export MORPH_AWS_SECRET_KEY= <aws_secret_key>
-$ export ES_HOST='<elastic_search_host_endpoint>'
+$ export MORPH_AWS_ACCESS_KEY_ID='<aws_access_key_id>'
+$ export MORPH_AWS_SECRET_KEY='<aws_secret_key>'
+$ export ES_HOST='<elastic_search_host_endpoint>' # e.g localhost:9200
 $ export WEBHOOK_URL='<slack_webhook_url>'
 ```
 

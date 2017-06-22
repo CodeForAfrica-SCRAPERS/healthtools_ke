@@ -25,7 +25,7 @@ class Scraper(object):
             "aws_access_key_id": AWS["aws_access_key_id"],
             "aws_secret_access_key": AWS["aws_secret_access_key"],
             "region_name": AWS["region_name"]
-            })
+        })
         # set up authentication credentials
         awsauth = AWS4Auth(AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], 'es')
         # client host for aws elastic search service
@@ -37,7 +37,7 @@ class Scraper(object):
             verify_certs=True,
             connection_class=RequestsHttpConnection,
             serializer=JSONSerializerPython2()
-            )
+        )
 
     def scrape_site(self):
         '''
@@ -85,7 +85,7 @@ class Scraper(object):
             self.s3.upload_fileobj(
                 delete_file, "cfa-healthtools-ke",
                 self.delete_file)
-            print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            print "[{0}] - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
             return all_results
 
@@ -180,10 +180,12 @@ class Scraper(object):
                 _type = 'doctors'
             else:
                 _type = 'health-facilities'
+
             # get documents to be deleted
             delete_docs = self.s3.get_object(
                 Bucket="cfa-healthtools-ke",
                 Key=self.delete_file)['Body'].read()
+
             # delete
             try:
                 response = self.es_client.bulk(index=ES['index'], body=delete_docs, refresh=True)
@@ -197,14 +199,16 @@ class Scraper(object):
                                 "_index": ES['index'],
                                 "_type": _type,
                                 "_id": record['delete']["_id"]
-                                }})
+                            }
+                        })
                     except:
                         delete_records.append({
                             "delete": {
                                 "_index": ES['index'],
                                 "_type": _type,
                                 "_id": record["id"]
-                                }})
+                            }
+                        })
                 response = self.es_client.bulk(index=ES['index'], body=delete_records)
             return response
         except Exception as err:
@@ -259,7 +263,8 @@ class Scraper(object):
         response = requests.post(
             SLACK['url'],
             data=json.dumps(
-                {"text": "```{}```".format(message)}),
+                {"text": "```{}```".format(message)}
+            ),
             headers={'Content-Type': 'application/json'}
-            )
+        )
         return response
