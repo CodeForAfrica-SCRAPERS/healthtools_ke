@@ -16,7 +16,7 @@ AWS = {
 }
 
 ES = {
-    "host": os.getenv("ES_HOST"),
+    "host": os.getenv("ES_HOST", None),
     "index": "healthtools"
 }
 
