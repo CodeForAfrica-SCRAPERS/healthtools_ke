@@ -49,7 +49,7 @@ class HealthFacilitiesScraper(Scraper):
 
     def get_data(self):
         try:
-            print "{{{0}}} - Started Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            print "[{0}] - Started Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             headers = {'Authorization': 'Bearer ' + self.access_token}
             r = requests.get(SEARCH_URL, headers=headers)
             data = r.json()

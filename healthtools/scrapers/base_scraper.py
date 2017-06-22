@@ -49,7 +49,7 @@ class Scraper(object):
         skipped_pages = 0
 
         print "[{0}] ".format(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
-        print "{{{0}}} - Started Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        print "[{0}] - Started Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         for page_num in range(1, self.num_pages_to_scrape + 1):
             url = self.site_url.format(page_num)
             try:
