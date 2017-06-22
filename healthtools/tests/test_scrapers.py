@@ -100,7 +100,10 @@ class TestDoctorsScraper(unittest.TestCase):
         self.health_facilities_scraper.get_token()
         self.assertIsNotNone(self.health_facilities_scraper.access_token)
 
-    def test_scrapper_sends_slack_notification(self):
+    def test_scrapper_prints_notification(self):
         response = self.base_scraper.print_error("Tests are passing")
-        self.assertEqual(response.status_code, 200)
+        if SLACK['url']:
+            self.assertEqual(response.status_code, 200)
+        else:
+            self.assertIsNone(response)
 

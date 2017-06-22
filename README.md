@@ -27,11 +27,21 @@ You can set the required environment variables like so
 $ export MORPH_AWS_REGION=<aws_region>
 $ export MORPH_AWS_ACCESS_KEY_ID= <aws_access_key_id>
 $ export MORPH_AWS_SECRET_KEY= <aws_secret_key>
-$ export ES_HOST='<elastic_search_host_endpoint>'
-$ export WEBHOOK_URL='<slack_webhook_url>'
+$ export ES_HOST= <elastic_search_host_endpoint> (DO NOT SET THIS IF YOU WOULD LIKE TO USE ELASTIC SEARCH LOCALLY ON YOUR MACHINE)
+$ export WEBHOOK_URL= <slack_webhook_url> (DO NOT SET THIS IF YOU DON'T WANT TO POST ERROR MESSAGES ON SLACK)
 ```
+**If you want to use elasticsearch locally on your machine use the following instructions to set it up**
 
-You can now run the scrapers `$ python scraper.py` (It might take a while and you might need to change the endpoints in config.py if you haven't authorization for them)
+For linux and windows users, follow instructions from this [link](https://www.elastic.co/guide/en/elasticsearch/reference/current/setup.html)
+
+For mac users run `brew install elasticsearch` on your terminal
+
+**If you want to post messages on slack**
+
+Set up `Incoming Webhooks` [here](https://slack.com/signin?redir=%2Fservices%2Fnew%2Fincoming-webhook) and set the global environment for the `WEBHOOK_URL`
+
+You can now run the scrapers `$ python scraper.py` (It might take a while)
+
 
 ## Running the tests
 
