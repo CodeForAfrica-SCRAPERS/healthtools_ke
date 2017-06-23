@@ -25,7 +25,7 @@ class Scraper(object):
             "aws_access_key_id": AWS["aws_access_key_id"],
             "aws_secret_access_key": AWS["aws_secret_access_key"],
             "region_name": AWS["region_name"]
-            })
+        })
         # set up authentication credentials
         awsauth = AWS4Auth(AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], 'es')
         # client host for aws elastic search service
@@ -38,7 +38,7 @@ class Scraper(object):
                 verify_certs=True,
                 connection_class=RequestsHttpConnection,
                 serializer=JSONSerializerPython2()
-                )
+            )
         else:
             self.es_client = Elasticsearch('127.0.0.1')
 
