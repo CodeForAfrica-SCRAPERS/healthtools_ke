@@ -49,7 +49,7 @@ class HealthFacilitiesScraper(Scraper):
 
     def get_data(self):
         try:
-            print "{{{0}}} - Started Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            print "[{0}] - Started Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             headers = {'Authorization': 'Bearer ' + self.access_token}
             r = requests.get(SEARCH_URL, headers=headers)
             data = r.json()
@@ -73,7 +73,7 @@ class HealthFacilitiesScraper(Scraper):
             print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         except Exception as err:
-            print "ERROR IN - index_for_search() Health Facilities Scraper - %s" % err
+            self.print_error("ERROR IN - index_for_search() Health Facilities Scraper - {}" % err)
 
     def index_for_elasticsearch(self, record):
         meta_data = {"index": {

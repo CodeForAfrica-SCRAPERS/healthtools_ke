@@ -3,8 +3,8 @@ from cStringIO import StringIO
 from datetime import datetime
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
-from healthtools.config import AWS, ES
 from serializer import JSONSerializerPython2
+from healthtools.config import AWS, ES, SLACK
 import requests
 import boto3
 import re
@@ -24,32 +24,37 @@ class Scraper(object):
         self.s3 = boto3.client("s3", **{
             "aws_access_key_id": AWS["aws_access_key_id"],
             "aws_secret_access_key": AWS["aws_secret_access_key"],
-            "region_name": AWS["region_name"],
-            })
+            "region_name": AWS["region_name"]
+        })
         # set up authentication credentials
         awsauth = AWS4Auth(AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], 'es')
         # client host for aws elastic search service
-        self.es_client = Elasticsearch(
-            hosts=ES['host'],
-            port=443,
-            http_auth=awsauth,
-            use_ssl=True,
-            verify_certs=True,
-            connection_class=RequestsHttpConnection,
-            serializer=JSONSerializerPython2()
+        if ES['host']:
+            self.es_client = Elasticsearch(
+                hosts=ES['host'],
+                port=443,
+                http_auth=awsauth,
+                use_ssl=True,
+                verify_certs=True,
+                connection_class=RequestsHttpConnection,
+                serializer=JSONSerializerPython2()
             )
+        else:
+            self.es_client = Elasticsearch('127.0.0.1')
 
     def scrape_site(self):
         '''
         Scrape the whole site
         '''
-        self.get_total_number_of_pages()
+        print "[{0}] ".format(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
+        print "[{0}] Started Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
         all_results = []
         delete_batch = []
         skipped_pages = 0
 
-        print "[{0}] ".format(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
-        print "{{{0}}} - Started Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        self.get_total_number_of_pages()
+
         for page_num in range(1, self.num_pages_to_scrape + 1):
             url = self.site_url.format(page_num)
             try:
@@ -65,9 +70,9 @@ class Scraper(object):
                 delete_batch.extend(delete_docs)
             except Exception as err:
                 skipped_pages += 1
-                print "ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err)
+                self.print_error("ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err))
                 continue
-        print "{{{0}}} - Scraper completed. {1} documents retrieved.".format(
+        print "[{0}] - Scraper completed. {1} documents retrieved.".format(
             datetime.now().strftime('%Y-%m-%d %H:%M:%S'), len(all_results))
 
         if all_results:
@@ -83,7 +88,7 @@ class Scraper(object):
             self.s3.upload_fileobj(
                 delete_file, "cfa-healthtools-ke",
                 self.delete_file)
-            print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            print "[{0}] - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
             return all_results
 
@@ -121,7 +126,7 @@ class Scraper(object):
             return entries, delete_batch
         except Exception as err:
             if self.retries >= 5:
-                print "ERROR: Failed to scrape data from page {}  -- {}".format(page_url, str(err))
+                self.print_error("ERROR: Failed to scrape data from page {}  -- {}".format(page_url, str(err)))
                 return err
             else:
                 self.retries += 1
@@ -136,7 +141,7 @@ class Scraper(object):
             response = self.es_client.bulk(index=ES['index'], body=payload, refresh=True)
             return response
         except Exception as err:
-            print "ERROR - upload_data() - {} - {}".format(type(self).__name__, str(err))
+            self.print_error("ERROR - upload_data() - {} - {}".format(type(self).__name__, str(err)))
 
     def archive_data(self, payload):
         '''
@@ -157,14 +162,14 @@ class Scraper(object):
                                     CopySource="cfa-healthtools-ke/" + self.s3_key,
                                     Key=self.s3_historical_record_key.format(
                                         date))
-                print "{{{0}}} - Archived data has been updated.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                print "[{0}] - Archived data has been updated.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                 return
             else:
-                print "{{{0}}} - Data Scraped does not differ from archived data.".format(
+                print "[{0}] - Data Scraped does not differ from archived data.".format(
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         except Exception as err:
-            print "ERROR - archive_data() - {} - {}".format(self.s3_key, str(err))
+            self.print_error("ERROR - archive_data() - {} - {}".format(self.s3_key, str(err)))
 
     def delete_elasticsearch_docs(self):
         '''
@@ -178,10 +183,12 @@ class Scraper(object):
                 _type = 'doctors'
             else:
                 _type = 'health-facilities'
+
             # get documents to be deleted
             delete_docs = self.s3.get_object(
                 Bucket="cfa-healthtools-ke",
                 Key=self.delete_file)['Body'].read()
+
             # delete
             try:
                 response = self.es_client.bulk(index=ES['index'], body=delete_docs, refresh=True)
@@ -195,21 +202,23 @@ class Scraper(object):
                                 "_index": ES['index'],
                                 "_type": _type,
                                 "_id": record['delete']["_id"]
-                                }})
+                            }
+                        })
                     except:
                         delete_records.append({
                             "delete": {
                                 "_index": ES['index'],
                                 "_type": _type,
                                 "_id": record["id"]
-                                }})
+                            }
+                        })
                 response = self.es_client.bulk(index=ES['index'], body=delete_records)
             return response
         except Exception as err:
             if "NoSuchKey" in err:
-                print "ERROR - delete_elasticsearch_docs() - no delete file present"
+                self.print_error("ERROR - delete_elasticsearch_docs() - no delete file present")
                 return
-            print "ERROR - delete_elasticsearch_docs() - {} - {}".format(type(self).__name__, str(err))
+            self.print_error("ERROR - delete_elasticsearch_docs() - {} - {}".format(type(self).__name__, str(err)))
 
     def get_total_number_of_pages(self):
         '''
@@ -222,8 +231,7 @@ class Scraper(object):
             pattern = re.compile("(\d+) pages?")
             self.num_pages_to_scrape = int(pattern.search(text).group(1))
         except Exception as err:
-            print "ERROR: **get_total_page_numbers()** - url: {} - err: {}". \
-                format(self.site_url, str(err))
+            self.print_error("ERROR: **get_total_page_numbers()** - url: {} - err: {}".format(self.site_url, str(err)))
             return
 
     def make_soup(self, url):
@@ -250,4 +258,19 @@ class Scraper(object):
             }
         return meta_dict, entry
 
-
+    def print_error(self, message):
+        """
+        print error messages in the terminal
+        if slack webhook is set up post the errors to slack
+        """
+        print('[{0}] - '.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')) + message)
+        response = None
+        if SLACK['url']:
+            response = requests.post(
+                SLACK['url'],
+                data=json.dumps(
+                    {"text": "```{}```".format(message)}
+                ),
+                headers={'Content-Type': 'application/json'}
+            )
+        return response
