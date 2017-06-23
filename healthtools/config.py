@@ -17,6 +17,7 @@ AWS = {
 
 ES = {
     "host": os.getenv("ES_HOST", None),
+    "port": os.getenv("ES_PORT", '9200'),
     "index": "healthtools"
 }
 

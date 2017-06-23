@@ -26,21 +26,25 @@ class Scraper(object):
             "aws_secret_access_key": AWS["aws_secret_access_key"],
             "region_name": AWS["region_name"]
         })
-        # set up authentication credentials
-        awsauth = AWS4Auth(AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], 'es')
-        # client host for aws elastic search service
-        if ES['host']:
-            self.es_client = Elasticsearch(
-                hosts=ES['host'],
-                port=443,
-                http_auth=awsauth,
-                use_ssl=True,
-                verify_certs=True,
-                connection_class=RequestsHttpConnection,
-                serializer=JSONSerializerPython2()
-            )
-        else:
-            self.es_client = Elasticsearch('127.0.0.1')
+        try:
+            # client host for aws elastic search service
+            if 'aws' in ES['host']:
+                # set up authentication credentials
+                awsauth = AWS4Auth(AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], 'es')
+                self.es_client = Elasticsearch(
+                    hosts=ES['host'],
+                    port=ES['port'],
+                    http_auth=awsauth,
+                    use_ssl=True,
+                    verify_certs=True,
+                    connection_class=RequestsHttpConnection,
+                    serializer=JSONSerializerPython2()
+                )
+            else:
+                self.es_client = Elasticsearch("{}:{}".format(ES['host'], ES['port']))
+        except Exception as err:
+            self.print_error("[{}] - ERROR: Invalid Parameters For ES Client".format(
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     def scrape_site(self):
         '''
