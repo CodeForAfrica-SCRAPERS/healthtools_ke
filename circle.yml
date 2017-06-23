@@ -1,0 +1,17 @@
+machine:
+    python:
+        version: 2.7.5
+    java:
+      version: openjdk8
+dependencies:
+    pre:
+        - pip install -r requirements.txt
+    post:
+      - wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.4.2.tar.gz
+      - tar -xzf elasticsearch-5.4.2.tar.gz
+      - elasticsearch-5.4.2/bin/elasticsearch: {background: true}
+      - sleep 10 && wget --waitretry=5 --retry-connrefused -v http://127.0.0.1:9200/
+
+test:
+    override:
+        - nosetests --nocapture
