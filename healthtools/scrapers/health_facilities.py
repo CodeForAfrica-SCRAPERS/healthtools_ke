@@ -1,7 +1,7 @@
 import json
 from cStringIO import StringIO
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import ES
+from healthtools.config import ES, HF_BATCH, AWS
 import requests
 from datetime import datetime
 
@@ -53,22 +53,35 @@ class HealthFacilitiesScraper(Scraper):
             headers = {'Authorization': 'Bearer ' + self.access_token}
             r = requests.get(SEARCH_URL, headers=headers)
             data = r.json()
-            for i, record in enumerate(data['results']):
-                meta, elastic_data = self.index_for_elasticsearch(record)
-                self.payload.append(meta)
-                self.payload.append(elastic_data)
-                self.delete_data.append(self.delete_payload(record))
+            if self.small_batch:
+                self.count = 0
+                for i, record in enumerate(data['results']):
+                    if self.count <= HF_BATCH:
+                        meta, elastic_data = self.index_for_elasticsearch(record)
+                        self.payload.append(meta)
+                        self.payload.append(elastic_data)
+                        self.delete_data.append(self.delete_payload(record))
+                        self.count += 1
+                    else:
+                        break
+            else:
+                for i, record in enumerate(data['results']):
+                    meta, elastic_data = self.index_for_elasticsearch(record)
+                    self.payload.append(meta)
+                    self.payload.append(elastic_data)
+                    self.delete_data.append(self.delete_payload(record))
+                self.count = len(data['results'])
             self.delete_elasticsearch_docs()  # delete elasticsearch data
             self.upload(self.payload)  # upload data to elasticsearch
-            print "{{{0}}} - Scraper completed. {1} documents retrieved.".format(
-                datetime.now().strftime('%Y-%m-%d %H:%M:%S'), len(data['results']))
+            print "{{{0}}} - Scraper completed. {1} records retrieved.".format(
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S'), self.count)
             # Push the data to s3
             self.archive_data(json.dumps(self.payload))
 
             # Push the delete payload to s3
             delete_file = StringIO(json.dumps(self.delete_data))
             self.s3.upload_fileobj(
-                delete_file, "cfa-healthtools-ke",
+                delete_file, AWS["s3_bucket"],
                 self.delete_file)
             print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 

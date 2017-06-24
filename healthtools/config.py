@@ -27,6 +27,5 @@ SLACK = {
 
 TEST_DIR = os.getcwd() + "/healthtools/tests"
 
-SLACK = {
-    "url": os.getenv("WEBHOOK_URL")
-    }
+BATCH = 5
+HF_BATCH = 100  # batch for health facilities

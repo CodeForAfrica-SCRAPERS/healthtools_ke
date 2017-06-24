@@ -4,12 +4,13 @@ from datetime import datetime
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 from serializer import JSONSerializerPython2
-from healthtools.config import AWS, ES, SLACK
+from healthtools.config import AWS, ES, SLACK, BATCH
 import requests
 import boto3
 import re
 import json
 import hashlib
+import sys
 
 
 class Scraper(object):
@@ -26,6 +27,7 @@ class Scraper(object):
             "aws_secret_access_key": AWS["aws_secret_access_key"],
             "region_name": AWS["region_name"]
         })
+        self.small_batch = True if 'small_batch' in sys.argv else False
         try:
             # client host for aws elastic search service
             if 'aws' in ES['host']:
@@ -90,7 +92,7 @@ class Scraper(object):
             # store delete operations for next scrape
             delete_file = StringIO(delete_batch)
             self.s3.upload_fileobj(
-                delete_file, "cfa-healthtools-ke",
+                delete_file, AWS["s3_bucket"],
                 self.delete_file)
             print "[{0}] - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
@@ -153,17 +155,17 @@ class Scraper(object):
         '''
         try:
             old_etag = self.s3.get_object(
-                Bucket="cfa-healthtools-ke", Key=self.s3_key)["ETag"]
+                Bucket=AWS["s3_bucket"], Key=self.s3_key)["ETag"]
             new_etag = hashlib.md5(payload.encode('utf-8')).hexdigest()
             if eval(old_etag) != new_etag:
                 file_obj = StringIO(payload.encode('utf-8'))
                 self.s3.upload_fileobj(file_obj,
-                                       "cfa-healthtools-ke", self.s3_key)
+                                       AWS["s3_bucket"], self.s3_key)
 
                 # archive historical data
                 date = datetime.today().strftime('%Y%m%d')
-                self.s3.copy_object(Bucket="cfa-healthtools-ke",
-                                    CopySource="cfa-healthtools-ke/" + self.s3_key,
+                self.s3.copy_object(Bucket=AWS["s3_bucket"],
+                                    CopySource="{}/".format(AWS["s3_bucket"]) + self.s3_key,
                                     Key=self.s3_historical_record_key.format(
                                         date))
                 print "[{0}] - Archived data has been updated.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
@@ -189,7 +191,7 @@ class Scraper(object):
                 _type = 'health-facilities'
             # get documents to be deleted
             delete_docs = self.s3.get_object(
-                Bucket="cfa-healthtools-ke",
+                Bucket=AWS["s3_bucket"],
                 Key=self.delete_file)['Body'].read()
             # delete
             try:
@@ -227,11 +229,15 @@ class Scraper(object):
         Get the total number of pages to be scraped
         '''
         try:
-            soup = self.make_soup(self.site_url.format(1))  # get first page
-            text = soup.find("div", {"id": "tnt_pagination"}).getText()
-            # what number of pages looks like
-            pattern = re.compile("(\d+) pages?")
-            self.num_pages_to_scrape = int(pattern.search(text).group(1))
+            # ensure the number of pages set is restrained to 1-10
+            if self.small_batch:
+                self.num_pages_to_scrape = BATCH
+            else:
+                soup = self.make_soup(self.site_url.format(1))  # get first page
+                text = soup.find("div", {"id": "tnt_pagination"}).getText()
+                # what number of pages looks like
+                pattern = re.compile("(\d+) pages?")
+                self.num_pages_to_scrape = int(pattern.search(text).group(1))
         except Exception as err:
             self.print_error("ERROR: **get_total_page_numbers()** - url: {} - err: {}".format(self.site_url, str(err)))
             return

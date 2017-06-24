@@ -45,6 +45,13 @@ If you set up elasticsearch locally run it `$ elasticsearch`
 
 You can now run the scrapers `$ python scraper.py` (It might take a while)
 
+**FOR DEVELOPMENT PURPOSES**
+
+Set the **BATCH** and **HF_BATCH** (for health facilities) in the config file that will ensure the scraper doesn't scrape entire sites but just the number 
+of pages that you would like it to scrape defined by this variable.
+
+use `$ python scraper.py small_batch` to run the scrapers
+
 
 ## Running the tests
 _**make sure if you use elasticsearch locally, it's running**_
