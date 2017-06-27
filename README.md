@@ -27,6 +27,7 @@ You can set the required environment variables like so
 $ export MORPH_AWS_REGION=<aws_region>
 $ export MORPH_AWS_ACCESS_KEY_ID=<aws_access_key_id>
 $ export MORPH_AWS_SECRET_KEY=<aws_secret_key>
+$ export S3_BUCKET=<s3_bucket_name> # If not set, data will be archived locally in the project's folder in a folder called data
 $ export ES_HOST=<elastic_search_host_endpoint> # Do not set this if you would like to use elastic search locally on your machine
 $ export WEBHOOK_URL=<slack_webhook_url> # Do not set this if you don't want to post error messages on Slack
 ```
@@ -43,6 +44,13 @@ Set up `Incoming Webhooks` [here](https://slack.com/signin?redir=%2Fservices%2Fn
 If you set up elasticsearch locally run it `$ elasticsearch`
 
 You can now run the scrapers `$ python scraper.py` (It might take a while)
+
+**FOR DEVELOPMENT PURPOSES**
+
+Set the **BATCH** and **HF_BATCH** (for health facilities) in the config file that will ensure the scraper doesn't scrape entire sites but just the number 
+of pages that you would like it to scrape defined by this variable.
+
+use `$ python scraper.py small_batch` to run the scrapers
 
 
 ## Running the tests
