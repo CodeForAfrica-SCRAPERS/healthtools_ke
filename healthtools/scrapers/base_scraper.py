@@ -4,13 +4,14 @@ from datetime import datetime
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 from serializer import JSONSerializerPython2
-from healthtools.config import AWS, ES, SLACK, BATCH
+from healthtools.config import AWS, ES, SLACK, BATCH, DATA_DIR
 import requests
 import boto3
 import re
 import json
 import hashlib
 import sys
+import os
 
 
 class Scraper(object):
@@ -47,6 +48,11 @@ class Scraper(object):
         except Exception as err:
             self.print_error("[{}] - ERROR: Invalid Parameters For ES Client".format(
                 datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        # if to save locally create relevant directories
+        if not AWS["s3_bucket"] and not os.path.exists(DATA_DIR + 'data'):
+            os.mkdir(DATA_DIR + 'data')
+            os.mkdir(DATA_DIR + 'data/archive')
+            os.mkdir(DATA_DIR + 'data/test')
 
     def scrape_site(self):
         '''
@@ -60,7 +66,6 @@ class Scraper(object):
         skipped_pages = 0
 
         self.get_total_number_of_pages()
-
         for page_num in range(1, self.num_pages_to_scrape + 1):
             url = self.site_url.format(page_num)
             try:
@@ -79,7 +84,7 @@ class Scraper(object):
                 self.print_error("ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err))
                 continue
         print "[{0}] - Scraper completed. {1} documents retrieved.".format(
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S'), len(all_results))
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S'), len(all_results)/2)  # don't count indexing data
 
         if all_results:
             all_results_json = json.dumps(all_results)
@@ -90,10 +95,14 @@ class Scraper(object):
             self.archive_data(all_results_json)
 
             # store delete operations for next scrape
-            delete_file = StringIO(delete_batch)
-            self.s3.upload_fileobj(
-                delete_file, AWS["s3_bucket"],
-                self.delete_file)
+            if AWS["s3_bucket"]:
+                delete_file = StringIO(delete_batch)
+                self.s3.upload_fileobj(
+                    delete_file, AWS["s3_bucket"],
+                    self.delete_file)
+            else:
+                with open(DATA_DIR + self.delete_file, 'w') as delete:
+                    json.dump(delete_batch, delete)
             print "[{0}] - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
             return all_results
@@ -154,25 +163,34 @@ class Scraper(object):
         Upload scraped data to AWS S3
         '''
         try:
-            old_etag = self.s3.get_object(
-                Bucket=AWS["s3_bucket"], Key=self.s3_key)["ETag"]
-            new_etag = hashlib.md5(payload.encode('utf-8')).hexdigest()
-            if eval(old_etag) != new_etag:
-                file_obj = StringIO(payload.encode('utf-8'))
-                self.s3.upload_fileobj(file_obj,
-                                       AWS["s3_bucket"], self.s3_key)
+            date = datetime.today().strftime('%Y%m%d')
+            if AWS["s3_bucket"]:
+                old_etag = self.s3.get_object(
+                    Bucket=AWS["s3_bucket"], Key=self.s3_key)["ETag"]
+                new_etag = hashlib.md5(payload.encode('utf-8')).hexdigest()
+                if eval(old_etag) != new_etag:
+                    file_obj = StringIO(payload.encode('utf-8'))
+                    self.s3.upload_fileobj(file_obj,
+                                           AWS["s3_bucket"], self.s3_key)
 
-                # archive historical data
-                date = datetime.today().strftime('%Y%m%d')
-                self.s3.copy_object(Bucket=AWS["s3_bucket"],
-                                    CopySource="{}/".format(AWS["s3_bucket"]) + self.s3_key,
-                                    Key=self.s3_historical_record_key.format(
-                                        date))
-                print "[{0}] - Archived data has been updated.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-                return
+                    # archive historical data
+                    self.s3.copy_object(Bucket=AWS["s3_bucket"],
+                                        CopySource="{}/".format(AWS["s3_bucket"]) + self.s3_key,
+                                        Key=self.s3_historical_record_key.format(
+                                            date))
+                    print "[{0}] - Archived data has been updated.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                    return
+                else:
+                    print "[{0}] - Data Scraped does not differ from archived data.".format(
+                        datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             else:
-                print "[{0}] - Data Scraped does not differ from archived data.".format(
-                    datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                # archive to local dir
+                with open(DATA_DIR + self.s3_key, 'w') as data:
+                    json.dump(payload, data)
+                # archive historical data to local dir
+                with open(DATA_DIR + self.s3_historical_record_key.format(date), 'w') as history:
+                    json.dump(payload, history)
+                print "[{0}] - Archived data has been updated.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         except Exception as err:
             self.print_error("ERROR - archive_data() - {} - {}".format(self.s3_key, str(err)))
@@ -190,9 +208,17 @@ class Scraper(object):
             else:
                 _type = 'health-facilities'
             # get documents to be deleted
-            delete_docs = self.s3.get_object(
-                Bucket=AWS["s3_bucket"],
-                Key=self.delete_file)['Body'].read()
+            if AWS["s3_bucket"]:
+                delete_docs = self.s3.get_object(
+                    Bucket=AWS["s3_bucket"],
+                    Key=self.delete_file)['Body'].read()
+            else:
+                if os.path.exists(DATA_DIR + self.delete_file):
+                    with open(DATA_DIR + self.delete_file) as delete:
+                        delete_docs = json.load(delete)
+                else:
+                    self.print_error("ERROR - delete_elasticsearch_docs() - no delete file present")
+                    return
             # delete
             try:
                 response = self.es_client.bulk(index=ES['index'], body=delete_docs, refresh=True)

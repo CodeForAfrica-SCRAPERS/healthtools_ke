@@ -27,6 +27,7 @@ You can set the required environment variables like so
 $ export MORPH_AWS_REGION=<aws_region>
 $ export MORPH_AWS_ACCESS_KEY_ID=<aws_access_key_id>
 $ export MORPH_AWS_SECRET_KEY=<aws_secret_key>
+$ export S3_BUCKET=<s3_bucket_name> # If not set, data will be archived locally in the project's folder in a folder called data
 $ export ES_HOST=<elastic_search_host_endpoint> # Do not set this if you would like to use elastic search locally on your machine
 $ export WEBHOOK_URL=<slack_webhook_url> # Do not set this if you don't want to post error messages on Slack
 ```

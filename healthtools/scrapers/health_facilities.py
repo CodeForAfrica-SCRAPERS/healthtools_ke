@@ -1,7 +1,7 @@
 import json
 from cStringIO import StringIO
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import ES, HF_BATCH, AWS
+from healthtools.config import ES, HF_BATCH, AWS, DATA_DIR
 import requests
 from datetime import datetime
 
@@ -30,6 +30,7 @@ class HealthFacilitiesScraper(Scraper):
         self.delete_file = "data/delete_health_facilities.json"
         self.payload = []
         self.delete_data = []
+        self.count = 0
 
     def get_token(self):
         print "[Health Facilities Scraper]"
@@ -54,15 +55,14 @@ class HealthFacilitiesScraper(Scraper):
             r = requests.get(SEARCH_URL, headers=headers)
             data = r.json()
             if self.small_batch:
-                self.count = 0
                 for i, record in enumerate(data['results']):
-                    if self.count <= HF_BATCH:
+                    if i < HF_BATCH:
                         meta, elastic_data = self.index_for_elasticsearch(record)
                         self.payload.append(meta)
                         self.payload.append(elastic_data)
                         self.delete_data.append(self.delete_payload(record))
-                        self.count += 1
                     else:
+                        self.count = i
                         break
             else:
                 for i, record in enumerate(data['results']):
@@ -70,7 +70,7 @@ class HealthFacilitiesScraper(Scraper):
                     self.payload.append(meta)
                     self.payload.append(elastic_data)
                     self.delete_data.append(self.delete_payload(record))
-                self.count = len(data['results'])
+                    self.count = i
             self.delete_elasticsearch_docs()  # delete elasticsearch data
             self.upload(self.payload)  # upload data to elasticsearch
             print "{{{0}}} - Scraper completed. {1} records retrieved.".format(
@@ -78,11 +78,15 @@ class HealthFacilitiesScraper(Scraper):
             # Push the data to s3
             self.archive_data(json.dumps(self.payload))
 
-            # Push the delete payload to s3
-            delete_file = StringIO(json.dumps(self.delete_data))
-            self.s3.upload_fileobj(
-                delete_file, AWS["s3_bucket"],
-                self.delete_file)
+            if AWS["s3_bucket"]:
+                # Push the delete payload to s3
+                delete_file = StringIO(json.dumps(self.delete_data))
+                self.s3.upload_fileobj(
+                    delete_file, AWS["s3_bucket"],
+                    self.delete_file)
+            else:
+                with open(DATA_DIR + self.delete_file, 'w') as delete:
+                    json.dump(self.delete_data, delete)
             print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         except Exception as err:

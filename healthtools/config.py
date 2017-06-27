@@ -12,11 +12,11 @@ AWS = {
     "aws_access_key_id": os.getenv("MORPH_AWS_ACCESS_KEY"),
     "aws_secret_access_key": os.getenv("MORPH_AWS_SECRET_KEY"),
     "region_name": os.getenv("MORPH_AWS_REGION", "eu-west-1"),
-    "s3_bucket": os.getenv("S3_BUCKET", "cfa-healthtools-ke")
+    "s3_bucket": os.getenv("S3_BUCKET", None)
 }
 
 ES = {
-    "host": os.getenv("ES_HOST", None),
+    "host": os.getenv("ES_HOST", '127.0.0.1'),
     "port": os.getenv("ES_PORT", '9200'),
     "index": "healthtools"
 }
@@ -29,3 +29,5 @@ TEST_DIR = os.getcwd() + "/healthtools/tests"
 
 BATCH = 5
 HF_BATCH = 100  # batch for health facilities
+
+DATA_DIR = os.getcwd() + "/healthtools/"
