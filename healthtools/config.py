@@ -16,8 +16,8 @@ AWS = {
 }
 
 ES = {
-    "host": os.getenv("ES_HOST", '127.0.0.1'),
-    "port": os.getenv("ES_PORT", '9200'),
+    "host": os.getenv("ES_HOST", "127.0.0.1"),
+    "port": os.getenv("ES_PORT", "9200"),
     "index": "healthtools"
 }
 
@@ -27,7 +27,7 @@ SLACK = {
 
 TEST_DIR = os.getcwd() + "/healthtools/tests"
 
-BATCH = 5
-HF_BATCH = 100  # batch for health facilities
+SMALL_BATCH = 5  # No of pages from clinical officers, doctors and foreign doctors sites, scrapped in development mode
+SMALL_BATCH_HF = 100  # No of records scraped from health-facilities sites in development mode
 
-DATA_DIR = os.getcwd() + "/healthtools/"
+DATA_DIR = os.getcwd() + "/data/"

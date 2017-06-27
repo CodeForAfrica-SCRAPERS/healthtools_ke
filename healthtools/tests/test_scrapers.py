@@ -5,7 +5,7 @@ from healthtools.scrapers.doctors import DoctorsScraper
 from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
 from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
 from healthtools.scrapers.health_facilities import HealthFacilitiesScraper
-from healthtools.config import TEST_DIR, SLACK, AWS, DATA_DIR
+from healthtools.config import TEST_DIR, SLACK, AWS
 
 
 class TestDoctorsScraper(unittest.TestCase):
@@ -39,60 +39,57 @@ class TestDoctorsScraper(unittest.TestCase):
         with open(TEST_DIR + "/dummy_files/doctors.json", "r") as my_file:
             data = my_file.read()
             response = self.doctors_scraper.upload_data(json.loads(data))
-            self.assertEqual(response['items'][0]['index']['_shards']['successful'], 1)
+            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
 
     def test_foreign_doctors_scraper_uploads_to_elasticsearch(self):
         with open(TEST_DIR + "/dummy_files/foreign_doctors.json", "r") as my_file:
             data = my_file.read()
             response = self.foreign_doctors_scraper.upload_data(json.loads(data))
-            self.assertEqual(response['items'][0]['index']['_shards']['successful'], 1)
+            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
 
     def test_clinical_officers_scraper_uploads_to_elasticsearch(self):
         with open(TEST_DIR + "/dummy_files/clinical_officers.json", "r") as my_file:
             data = my_file.read()
             response = self.clinical_officers_scraper.upload_data(json.loads(data))
-            self.assertEqual(response['items'][0]['index']['_shards']['successful'], 1)
+            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
 
     def test_health_facilities_scraper_uploads_to_elasticsearch(self):
         with open(TEST_DIR + "/dummy_files/health_facilities.json", "r") as my_file:
             data = my_file.read()
             response = self.health_facilities_scraper.upload(json.loads(data))
-            self.assertEqual(response['items'][0]['index']['_shards']['successful'], 1)
+            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
 
     def test_doctors_scraper_archives_to_s3(self):
-        self.doctors_scraper.s3_key = "test/doctors.json" if AWS['s3_bucket'] else\
-            "data/test/doctors.json"
+        self.doctors_scraper.s3_key = "test/doctors.json"
         with open(TEST_DIR + "/dummy_files/doctors.json", "r") as my_file:
             data = my_file.read()
             self.doctors_scraper.archive_data(data)
         uploaded_data = self.doctors_scraper.s3.get_object(
-            Bucket=AWS['s3_bucket'],
+            Bucket=AWS["s3_bucket"],
             Key=self.doctors_scraper.s3_key
-            )['Body'].read() if AWS['s3_bucket'] else json.load(open(DATA_DIR + self.doctors_scraper.s3_key))
+            )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.doctors_scraper.s3_key))
         self.assertEqual(uploaded_data, data)
 
     def test_foreign_doctors_scraper_archives_to_s3(self):
-        self.foreign_doctors_scraper.s3_key = "test/foreign_doctors.json" if AWS['s3_bucket'] else\
-            "data/test/foreign_doctors.json"
+        self.foreign_doctors_scraper.s3_key = "test/foreign_doctors.json"
         with open(TEST_DIR + "/dummy_files/foreign_doctors.json", "r") as my_file:
             data = my_file.read()
             self.foreign_doctors_scraper.archive_data(data)
         uploaded_data = self.foreign_doctors_scraper.s3.get_object(
-            Bucket=AWS['s3_bucket'],
+            Bucket=AWS["s3_bucket"],
             Key=self.foreign_doctors_scraper.s3_key
-            )['Body'].read() if AWS['s3_bucket'] else json.load(open(DATA_DIR + self.foreign_doctors_scraper.s3_key))
+            )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.foreign_doctors_scraper.s3_key))
         self.assertEqual(uploaded_data, data)
 
     def test_clinical_officers_scraper_archives_to_s3(self):
-        self.clinical_officers_scraper.s3_key = "test/clinical_officers.json" if AWS['s3_bucket'] else\
-            "data/test/clinical_officers.json"
+        self.clinical_officers_scraper.s3_key = "test/clinical_officers.json"
         with open(TEST_DIR + "/dummy_files/clinical_officers.json", "r") as my_file:
             data = my_file.read()
             self.clinical_officers_scraper.archive_data(data)
         uploaded_data = self.clinical_officers_scraper.s3.get_object(
-            Bucket=AWS['s3_bucket'],
+            Bucket=AWS["s3_bucket"],
             Key=self.clinical_officers_scraper.s3_key
-            )['Body'].read() if AWS['s3_bucket'] else json.load(open(DATA_DIR + self.clinical_officers_scraper.s3_key))
+            )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.clinical_officers_scraper.s3_key))
         self.assertEqual(uploaded_data, data)
 
     def test_health_facilities_scraper_gets_token(self):
@@ -101,7 +98,7 @@ class TestDoctorsScraper(unittest.TestCase):
 
     def test_scrapper_prints_notification(self):
         response = self.base_scraper.print_error("Tests are passing")
-        if SLACK['url']:
+        if SLACK["url"]:
             self.assertEqual(response.status_code, 200)
         else:
             self.assertIsNone(response)
