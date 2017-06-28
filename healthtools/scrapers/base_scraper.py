@@ -303,10 +303,32 @@ class Scraper(object):
         print("[{0}] - ".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + message)
         response = None
         if SLACK["url"]:
+            message = message.split("-")
             response = requests.post(
                 SLACK["url"],
                 data=json.dumps(
-                    {"text": "```{}```".format(message)}
+                    {"attachments": [{
+                        "author_name": "{}".format(message[2]),
+                        "color": "danger",
+                        "pretext": "{}needs attention".format(message[2]),
+                        "fields": [
+                            {
+                                "title": "{} on {}".format(message[0], message[1]),
+                                "value": "{}".format(message[3]),
+                                "short": False
+                                },
+                            {
+                                "title": "Time",
+                                "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+                                "short": True
+                                },
+                            {
+                                "title": "Severity",
+                                "value": "{}".format(message[3].split(":")[1]),
+                                "short": True
+                                }
+                            ]
+                        }]}
                     ),
                 headers={"Content-Type": "application/json"}
                 )
