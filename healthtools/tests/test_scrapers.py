@@ -97,7 +97,7 @@ class TestDoctorsScraper(unittest.TestCase):
         self.assertIsNotNone(self.health_facilities_scraper.access_token)
 
     def test_scrapper_prints_notification(self):
-        response = self.base_scraper.print_error("Tests are passing")
+        response = self.base_scraper.print_error("Testing Error - Passing - Tests - Pass:Pass")
         if SLACK["url"]:
             self.assertEqual(response.status_code, 200)
         else:
