@@ -12,7 +12,7 @@ import json
 import hashlib
 import sys
 import os
-import socket
+import getpass
 
 
 class Scraper(object):
@@ -318,7 +318,7 @@ class Scraper(object):
                                 "value": "{}".format(errors[3]),
                                 "short": False}, {
                                 "title": "Machine Location",
-                                "value": "{}".format(socket.gethostname()),
+                                "value": "{}".format(getpass.getuser()),
                                 "short": True}, {
                                 "title": "Time",
                                 "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
@@ -344,7 +344,7 @@ class Scraper(object):
                                 "value": "{}".format(errors[1]),
                                 "short": False}, {
                                 "title": "Machine Location",
-                                "value": "{}".format(socket.gethostname()),
+                                "value": "{}".format(getpass.getuser()),
                                 "short": True}, {
                                 "title": "Time",
                                 "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
