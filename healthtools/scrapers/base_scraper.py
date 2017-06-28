@@ -310,10 +310,10 @@ class Scraper(object):
                     {"attachments": [{
                         "author_name": "{}".format(message[2]),
                         "color": "danger",
-                        "pretext": "{}needs attention".format(message[2]),
+                        "pretext": "[SCRAPER] New Alert for{}:{}".format(message[2], message[1]),
                         "fields": [
                             {
-                                "title": "{} on {}".format(message[0], message[1]),
+                                "title": "Message",
                                 "value": "{}".format(message[3]),
                                 "short": False
                                 },
