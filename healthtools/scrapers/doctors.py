@@ -27,18 +27,18 @@ class DoctorsScraper(Scraper):
         :return: dictionaries of the entry's metadata and the formatted entry
         """
         try:
-            date_obj = datetime.strptime(entry['reg_date'], "%Y-%m-%d")
+            date_obj = datetime.strptime(entry["reg_date"], "%Y-%m-%d")
         except:
-            date_obj = datetime.strptime(entry['reg_date'], "%d-%m-%Y")
-        entry['reg_date'] = datetime.strftime(
+            date_obj = datetime.strptime(entry["reg_date"], "%d-%m-%Y")
+        entry["reg_date"] = datetime.strftime(
             date_obj, "%Y-%m-%dT%H:%M:%S.000Z")
         entry["facility"] = entry["practice_type"] = "-"
         # all bulk data need meta data describing the data
         meta_dict = {
             "index": {
-                "_index": ES['index'],
-                "_type": 'doctors',
-                "_id": entry['id']
+                "_index": ES["index"],
+                "_type": "doctors",
+                "_id": entry["id"]
                 }
             }
         return meta_dict, entry

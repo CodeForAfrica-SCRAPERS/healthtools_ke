@@ -29,9 +29,9 @@ class ForeignDoctorsScraper(Scraper):
         # all bulk data need meta data describing the data
         meta_dict = {
             "index": {
-                "_index": ES['index'],
-                "_type": 'doctors',
-                "_id": entry['id']
+                "_index": ES["index"],
+                "_type": "doctors",
+                "_id": entry["id"]
                 }
             }
         return meta_dict, entry
