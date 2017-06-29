@@ -307,13 +307,14 @@ class Scraper(object):
         print("[{0}] - ".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + message)
         response = None
         if SLACK["url"]:
-            errors = message.split("-")
-            try:
-                response = requests.post(
-                    SLACK["url"],
-                    data=json.dumps(
-                        {
-                            "attachments": [
+            errors = message.split("-", 3)
+            severity = errors[3].split(":")
+            response = requests.post(
+                SLACK["url"],
+                data=json.dumps(
+                    {
+                        "attachments":
+                            [
                                 {
                                     "author_name": "{}".format(errors[2]),
                                     "color": "danger",
@@ -321,60 +322,26 @@ class Scraper(object):
                                     "fields": [
                                         {
                                             "title": "Message",
-                                            "value": "{}: {}".format(getpass.getuser(), errors[3]),
+                                            "value": "{}".format(errors[3]),
                                             "short": False
-                                        },
+                                            },
+                                        {
+                                            "title": "Machine Location",
+                                            "value": "{}".format(getpass.getuser()),
+                                            "short": True
+                                            },
                                         {
                                             "title": "Time",
                                             "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-                                            "short": True
-                                        },
+                                            "short": True},
                                         {
                                             "title": "Severity",
-                                            "value": "{}".format(errors[3].split(":")[1]),
+                                            "value": "{}".format(severity[1]),
                                             "short": True
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ),
-                    headers={"Content-Type": "application/json"}
-                )
-            except:
-                # some errors are formatted differently and this block of code handles that
-                errors = message.split(":")
-                error_message = errors[0].split("-")
-                response = requests.post(
-                    SLACK["url"],
-                    data=json.dumps(
-                        {
-                            "attachments": [
-                                {
-                                    "author_name": "{}".format(error_message[2]),
-                                    "color": "danger",
-                                    "pretext": "[SCRAPER] New Alert for{}:{}".format(error_message[2], error_message[1]),
-                                    "fields": [
-                                        {
-                                            "title": "Message",
-                                            "value": "{}: {}".format(getpass.getuser(), errors[1]),
-                                            "short": False
-                                        },
-                                        {
-                                            "title": "Time",
-                                            "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-                                            "short": True
-                                        },
-                                        {
-                                            "title": "Severity",
-                                            "value": "{}".format(errors[1].split(".")[0]),
-                                            "short": True
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ),
-                    headers={"Content-Type": "application/json"}
-                )
+                                            }
+                                        ]
+                                    }
+                                ]
+                        }),
+                headers={"Content-Type": "application/json"})
         return response
