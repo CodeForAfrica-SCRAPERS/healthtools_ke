@@ -12,7 +12,7 @@ import json
 import hashlib
 import sys
 import os
-import socket
+import getpass
 
 
 class Scraper(object):
@@ -317,16 +317,15 @@ class Scraper(object):
                                 "title": "Message",
                                 "value": "{}".format(errors[3]),
                                 "short": False}, {
+                                "title": "Machine Location",
+                                "value": "{}".format(getpass.getuser()),
+                                "short": True}, {
                                 "title": "Time",
                                 "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
                                 "short": True}, {
                                 "title": "Severity",
                                 "value": "{}".format(errors[3].split(":")[1]),
-                                "short": True}, {
-                                "title": "Location",
-                                "value": "{}".format(socket.gethostname()),
-                                "short": True
-                                }
+                                "short": True}
                                 ]
                             }]}), headers={"Content-Type": "application/json"})
             except:
@@ -344,16 +343,15 @@ class Scraper(object):
                                 "title": "Message",
                                 "value": "{}".format(errors[1]),
                                 "short": False}, {
+                                "title": "Machine Location",
+                                "value": "{}".format(getpass.getuser()),
+                                "short": True}, {
                                 "title": "Time",
                                 "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
                                 "short": True}, {
                                 "title": "Severity",
                                 "value": "{}".format(errors[1].split(".")[0]),
-                                "short": True}, {
-                                "title": "Location",
-                                "value": "{}".format(socket.gethostname()),
-                                "short": True
-                                }
+                                "short": True}
                                 ]
                                 }]}), headers={"Content-Type": "application/json"})
         return response
