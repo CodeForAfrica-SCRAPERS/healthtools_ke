@@ -50,7 +50,7 @@ class Scraper(object):
             else:
                 self.es_client = Elasticsearch("{}:{}".format(ES["host"], ES["port"]))
         except Exception as err:
-            self.print_error("ERROR: Invalid Parameters For ES Client: {}".format(str(err)))
+            self.print_error("ERROR - Invalid Parameters For ES Client - {}".format(str(err)))
 
         # if to save locally create relevant directories
         if not AWS["s3_bucket"] and not os.path.exists(DATA_DIR):
@@ -145,7 +145,7 @@ class Scraper(object):
             return entries, delete_batch
         except Exception as err:
             if self.retries >= 5:
-                self.print_error("ERROR: Failed to scrape data from page {} -- {}".format(page_url, str(err)))
+                self.print_error("ERROR: Failed to scrape data from page {} - {}".format(page_url, str(err)))
                 return err
             else:
                 self.retries += 1
