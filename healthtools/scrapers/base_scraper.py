@@ -50,7 +50,7 @@ class Scraper(object):
             else:
                 self.es_client = Elasticsearch("{}:{}".format(ES["host"], ES["port"]))
         except Exception as err:
-            self.print_error("ERROR - Invalid Parameters For ES Client - {}".format(str(err)))
+            self.print_error("ERROR - ES Client - Invalid Parameters - {}".format(str(err)))
 
         # if to save locally create relevant directories
         if not AWS["s3_bucket"] and not os.path.exists(DATA_DIR):
@@ -85,7 +85,7 @@ class Scraper(object):
                 delete_batch.extend(delete_docs)
             except Exception as err:
                 skipped_pages += 1
-                self.print_error("ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err))
+                self.print_error("ERROR - scrape_site() - source: {} page: {} - {}".format(url, page_num, err))
                 continue
         print "[{0}] - Scraper completed. {1} documents retrieved.".format(
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(all_results)/2)  # don't count indexing data
@@ -145,7 +145,7 @@ class Scraper(object):
             return entries, delete_batch
         except Exception as err:
             if self.retries >= 5:
-                self.print_error("ERROR: Failed to scrape data from page {} - {}".format(page_url, str(err)))
+                self.print_error("ERROR - Failed to scrape data from page - {} - {}".format(page_url, str(err)))
                 return err
             else:
                 self.retries += 1
@@ -224,7 +224,7 @@ class Scraper(object):
                     with open(self.delete_file) as delete:
                         delete_docs = json.load(delete)
                 else:
-                    self.print_error("ERROR - delete_elasticsearch_docs() - no delete file present")
+                    self.print_error("ERROR - delete_elasticsearch_docs() -- no delete file present")
                     return
             # delete
             try:
@@ -253,7 +253,7 @@ class Scraper(object):
             return response
         except Exception as err:
             if "NoSuchKey" in err:
-                self.print_error("ERROR - delete_elasticsearch_docs() - no delete file present")
+                self.print_error("ERROR - delete_elasticsearch_docs() -- no delete file present")
                 return
             self.print_error("ERROR - delete_elasticsearch_docs() - {} - {}".format(type(self).__name__, str(err)))
 
@@ -272,7 +272,7 @@ class Scraper(object):
                 pattern = re.compile("(\d+) pages?")
                 self.num_pages_to_scrape = int(pattern.search(text).group(1))
         except Exception as err:
-            self.print_error("ERROR: **get_total_page_numbers()** - url: {} - err: {}".format(self.site_url, str(err)))
+            self.print_error("ERROR - get_total_page_numbers() - url: {} - err: {}".format(self.site_url, str(err)))
             return
 
     def make_soup(self, url):
