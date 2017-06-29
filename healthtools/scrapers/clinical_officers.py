@@ -1,7 +1,6 @@
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import SITES, AWS
+from healthtools.config import SITES, ES
 from datetime import datetime
-import boto3
 
 
 class ClinicalOfficersScraper(Scraper):
@@ -15,24 +14,30 @@ class ClinicalOfficersScraper(Scraper):
         self.fields = [
             "name", "reg_date", "reg_no", "valid_dates",
             "address", "qualifications", "id",
-        ]
-        self.cloudsearch = boto3.client(
-            "cloudsearchdomain", **{
-                "aws_access_key_id": AWS["aws_access_key_id"],
-                "aws_secret_access_key": AWS["aws_secret_access_key"],
-                "region_name": AWS["region_name"],
-                "endpoint_url": AWS["cloudsearch_cos_endpoint"]
-            })
+            ]
 
         self.s3_key = "data/clinical_officers.json"
         self.s3_historical_record_key = "data/archive/clinical_officers-{}.json"
         self.delete_file = "data/delete_clinical_officers.json"
 
-    def format_doc(self, entry):
-        '''
-        Format entry into cloudsearch ready document
-        '''
-        date_obj = datetime.strptime(entry['reg_date'], "%d-%m-%y %H:%M")
+    def format_for_elasticsearch(self, entry):
+        """
+        Format entry into elasticsearch ready document
+        :param entry: the data to be formatted
+        :return: dictionaries of the entry's metadata and the formatted entry
+        """
+        try:
+            date_obj = datetime.strptime(entry['reg_date'], "%Y-%m-%d")
+        except:
+            date_obj = datetime.strptime(entry['reg_date'], "%d-%m-%Y")
         entry['reg_date'] = datetime.strftime(
             date_obj, "%Y-%m-%dT%H:%M:%S.000Z")
-        return entry
+        # all bulk data need meta data describing the data
+        meta_dict = {
+            "index": {
+                "_index": ES['index'],
+                "_type": 'clinical-officers',
+                "_id": entry['id']
+                }
+            }
+        return meta_dict, entry
