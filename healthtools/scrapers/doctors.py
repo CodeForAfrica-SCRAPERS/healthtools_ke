@@ -1,6 +1,7 @@
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import SITES, ES
+from healthtools.config import SITES, AWS
 from datetime import datetime
+import boto3
 
 
 class DoctorsScraper(Scraper):
@@ -14,31 +15,28 @@ class DoctorsScraper(Scraper):
         self.fields = [
             "name", "reg_date", "reg_no", "postal_address", "qualifications",
             "speciality", "sub_speciality", "id",
-            ]
+        ]
+        self.cloudsearch = boto3.client(
+            "cloudsearchdomain", **{
+                "aws_access_key_id": AWS["aws_access_key_id"],
+                "aws_secret_access_key": AWS["aws_secret_access_key"],
+                "region_name": AWS["region_name"],
+                "endpoint_url": AWS["cloudsearch_doctors_endpoint"]
+            })
 
         self.s3_key = "data/doctors.json"
         self.s3_historical_record_key = "data/archive/doctors-{}.json"
         self.delete_file = "data/delete_doctors.json"
 
-    def format_for_elasticsearch(self, entry):
-        """
-        Format entry into elasticsearch ready document
-        :param entry: the data to be formatted
-        :return: dictionaries of the entry's metadata and the formatted entry
-        """
+    def format_for_cloudsearch(self, entry):
+        '''
+        Format entry into cloudsearch ready document
+        '''
         try:
-            date_obj = datetime.strptime(entry["reg_date"], "%Y-%m-%d")
+            date_obj = datetime.strptime(entry['reg_date'], "%Y-%m-%d")
         except:
-            date_obj = datetime.strptime(entry["reg_date"], "%d-%m-%Y")
-        entry["reg_date"] = datetime.strftime(
+            date_obj = datetime.strptime(entry['reg_date'], "%d-%m-%Y")
+        entry['reg_date'] = datetime.strftime(
             date_obj, "%Y-%m-%dT%H:%M:%S.000Z")
         entry["facility"] = entry["practice_type"] = "-"
-        # all bulk data need meta data describing the data
-        meta_dict = {
-            "index": {
-                "_index": ES["index"],
-                "_type": "doctors",
-                "_id": entry["id"]
-                }
-            }
-        return meta_dict, entry
+        return {"id": entry["id"], "type": "add", "fields": entry}
