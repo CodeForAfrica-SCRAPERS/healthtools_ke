@@ -16,5 +16,6 @@ if __name__ == "__main__":
     if doctors_result:
         foreign_doctors_scraper.document_id = len(doctors_result) + 1
         foreign_docs_result = foreign_doctors_scraper.scrape_site()
+    clinical_officers_result = clinical_officers_scraper.scrape_site()
     healthfacilities_result = healthfacilities_scraper.scrape_data()
     clinical_officers_result = clinical_officers_scraper.scrape_site()

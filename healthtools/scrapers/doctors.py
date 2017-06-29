@@ -14,7 +14,7 @@ class DoctorsScraper(Scraper):
         self.fields = [
             "name", "reg_date", "reg_no", "postal_address", "qualifications",
             "speciality", "sub_speciality", "id",
-            ]
+        ]
 
         self.s3_key = "data/doctors.json"
         self.s3_historical_record_key = "data/archive/doctors-{}.json"
@@ -39,6 +39,6 @@ class DoctorsScraper(Scraper):
                 "_index": ES["index"],
                 "_type": "doctors",
                 "_id": entry["id"]
-                }
             }
+        }
         return meta_dict, entry
