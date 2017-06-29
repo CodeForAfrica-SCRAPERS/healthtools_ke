@@ -322,11 +322,7 @@ class Scraper(object):
                                 "short": True}, {
                                 "title": "Severity",
                                 "value": "{}".format(errors[3].split(":")[1]),
-                                "short": True}, {
-                                "title": "Location",
-                                "value": "{}".format(socket.gethostname()),
-                                "short": True
-                                }
+                                "short": True}
                                 ]
                             }]}), headers={"Content-Type": "application/json"})
             except:
@@ -349,11 +345,7 @@ class Scraper(object):
                                 "short": True}, {
                                 "title": "Severity",
                                 "value": "{}".format(errors[1].split(".")[0]),
-                                "short": True}, {
-                                "title": "Location",
-                                "value": "{}".format(socket.gethostname()),
-                                "short": True
-                                }
+                                "short": True}
                                 ]
                                 }]}), headers={"Content-Type": "application/json"})
         return response
