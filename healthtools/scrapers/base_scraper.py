@@ -17,38 +17,41 @@ import getpass
 
 class Scraper(object):
     def __init__(self):
+        self.small_batch = True if "small_batch" in sys.argv else False
+
         self.num_pages_to_scrape = None
         self.site_url = None
         self.fields = None
         self.s3_key = None
         self.document_id = 0  # id for each entry, to be incremented
         self.delete_file = None  # contains docs to be deleted after scrape
+
         self.s3_historical_record_key = None  # s3 historical_record key
         self.s3 = boto3.client("s3", **{
             "aws_access_key_id": AWS["aws_access_key_id"],
             "aws_secret_access_key": AWS["aws_secret_access_key"],
             "region_name": AWS["region_name"]
         })
-        self.small_batch = True if "small_batch" in sys.argv else False
+
         try:
             # client host for aws elastic search service
             if "aws" in ES["host"]:
                 # set up authentication credentials
                 awsauth = AWS4Auth(AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], "es")
                 self.es_client = Elasticsearch(
-                    hosts=ES["host"],
-                    port=ES["port"],
+                    hosts=[{"host": ES["host"], "port": ES["port"]}],
                     http_auth=awsauth,
                     use_ssl=True,
                     verify_certs=True,
                     connection_class=RequestsHttpConnection,
                     serializer=JSONSerializerPython2()
                 )
+
             else:
                 self.es_client = Elasticsearch("{}:{}".format(ES["host"], ES["port"]))
         except Exception as err:
-            self.print_error("[{}] - ERROR: Invalid Parameters For ES Client".format(
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            self.print_error("ERROR: Invalid Parameters For ES Client: {}".format(str(err)))
+
         # if to save locally create relevant directories
         if not AWS["s3_bucket"] and not os.path.exists(DATA_DIR):
             os.mkdir(DATA_DIR)
@@ -132,17 +135,17 @@ class Scraper(object):
                 entries.append(entry)
 
                 delete_batch.append({
-                    "delete":
-                        {
-                            "_index": ES["index"],
-                            "_type": meta["index"]["_type"],
-                            "_id": entry["id"]
-                            }})
+                    "delete": {
+                        "_index": ES["index"],
+                        "_type": meta["index"]["_type"],
+                        "_id": entry["id"]
+                    }
+                })
                 self.document_id += 1
             return entries, delete_batch
         except Exception as err:
             if self.retries >= 5:
-                self.print_error("ERROR: Failed to scrape data from page {}  -- {}".format(page_url, str(err)))
+                self.print_error("ERROR: Failed to scrape data from page {} -- {}".format(page_url, str(err)))
                 return err
             else:
                 self.retries += 1
@@ -236,16 +239,16 @@ class Scraper(object):
                                 "_index": ES["index"],
                                 "_type": _type,
                                 "_id": record["delete"]["_id"]
-                                }
-                            })
+                            }
+                        })
                     except:
                         delete_records.append({
                             "delete": {
                                 "_index": ES["index"],
                                 "_type": _type,
                                 "_id": record["id"]
-                                }
-                            })
+                            }
+                        })
                 response = self.es_client.bulk(index=ES["index"], body=delete_records)
             return response
         except Exception as err:
@@ -292,8 +295,8 @@ class Scraper(object):
                 "_index": "index",
                 "_type": "type",
                 "_id": "id"
-                }
             }
+        }
         return meta_dict, entry
 
     def print_error(self, message):
@@ -309,25 +312,35 @@ class Scraper(object):
                 response = requests.post(
                     SLACK["url"],
                     data=json.dumps(
-                        {"attachments": [{
-                            "author_name": "{}".format(errors[2]),
-                            "color": "danger",
-                            "pretext": "[SCRAPER] New Alert for{}:{}".format(errors[2], errors[1]),
-                            "fields": [{
-                                "title": "Message",
-                                "value": "{}".format(errors[3]),
-                                "short": False}, {
-                                "title": "Machine Location",
-                                "value": "{}".format(getpass.getuser()),
-                                "short": True}, {
-                                "title": "Time",
-                                "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-                                "short": True}, {
-                                "title": "Severity",
-                                "value": "{}".format(errors[3].split(":")[1]),
-                                "short": True}
-                                ]
-                            }]}), headers={"Content-Type": "application/json"})
+                        {
+                            "attachments": [
+                                {
+                                    "author_name": "{}".format(errors[2]),
+                                    "color": "danger",
+                                    "pretext": "[SCRAPER] New Alert for{}:{}".format(errors[2], errors[1]),
+                                    "fields": [
+                                        {
+                                            "title": "Message",
+                                            "value": "{}: {}".format(getpass.getuser(), errors[3]),
+                                            "short": False
+                                        },
+                                        {
+                                            "title": "Time",
+                                            "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+                                            "short": True
+                                        },
+                                        {
+                                            "title": "Severity",
+                                            "value": "{}".format(errors[3].split(":")[1]),
+                                            "short": True
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ),
+                    headers={"Content-Type": "application/json"}
+                )
             except:
                 # some errors are formatted differently and this block of code handles that
                 errors = message.split(":")
@@ -335,23 +348,33 @@ class Scraper(object):
                 response = requests.post(
                     SLACK["url"],
                     data=json.dumps(
-                        {"attachments": [{
-                            "author_name": "{}".format(error_message[2]),
-                            "color": "danger",
-                            "pretext": "[SCRAPER] New Alert for{}:{}".format(error_message[2], error_message[1]),
-                            "fields": [{
-                                "title": "Message",
-                                "value": "{}".format(errors[1]),
-                                "short": False}, {
-                                "title": "Machine Location",
-                                "value": "{}".format(getpass.getuser()),
-                                "short": True}, {
-                                "title": "Time",
-                                "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-                                "short": True}, {
-                                "title": "Severity",
-                                "value": "{}".format(errors[1].split(".")[0]),
-                                "short": True}
-                                ]
-                                }]}), headers={"Content-Type": "application/json"})
+                        {
+                            "attachments": [
+                                {
+                                    "author_name": "{}".format(error_message[2]),
+                                    "color": "danger",
+                                    "pretext": "[SCRAPER] New Alert for{}:{}".format(error_message[2], error_message[1]),
+                                    "fields": [
+                                        {
+                                            "title": "Message",
+                                            "value": "{}: {}".format(getpass.getuser(), errors[1]),
+                                            "short": False
+                                        },
+                                        {
+                                            "title": "Time",
+                                            "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+                                            "short": True
+                                        },
+                                        {
+                                            "title": "Severity",
+                                            "value": "{}".format(errors[1].split(".")[0]),
+                                            "short": True
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ),
+                    headers={"Content-Type": "application/json"}
+                )
         return response
