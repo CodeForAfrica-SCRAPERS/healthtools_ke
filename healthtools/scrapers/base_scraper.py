@@ -50,7 +50,7 @@ class Scraper(object):
             else:
                 self.es_client = Elasticsearch("{}:{}".format(ES["host"], ES["port"]))
         except Exception as err:
-            self.print_error("ERROR: Invalid Parameters For ES Client: {}".format(str(err)))
+            self.print_error("ERROR - ES Client - Invalid Parameters - {}".format(str(err)))
 
         # if to save locally create relevant directories
         if not AWS["s3_bucket"] and not os.path.exists(DATA_DIR):
@@ -85,7 +85,7 @@ class Scraper(object):
                 delete_batch.extend(delete_docs)
             except Exception as err:
                 skipped_pages += 1
-                self.print_error("ERROR: scrape_site() - source: {} - page: {} - {}".format(url, page_num, err))
+                self.print_error("ERROR - scrape_site() - source: {} page: {} - {}".format(url, page_num, err))
                 continue
         print "[{0}] - Scraper completed. {1} documents retrieved.".format(
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(all_results)/2)  # don't count indexing data
@@ -145,7 +145,7 @@ class Scraper(object):
             return entries, delete_batch
         except Exception as err:
             if self.retries >= 5:
-                self.print_error("ERROR: Failed to scrape data from page {} -- {}".format(page_url, str(err)))
+                self.print_error("ERROR - Failed to scrape data from page - {} - {}".format(page_url, str(err)))
                 return err
             else:
                 self.retries += 1
@@ -224,7 +224,7 @@ class Scraper(object):
                     with open(self.delete_file) as delete:
                         delete_docs = json.load(delete)
                 else:
-                    self.print_error("ERROR - delete_elasticsearch_docs() - no delete file present")
+                    self.print_error("ERROR - delete_elasticsearch_docs() -- no delete file present")
                     return
             # delete
             try:
@@ -253,7 +253,7 @@ class Scraper(object):
             return response
         except Exception as err:
             if "NoSuchKey" in err:
-                self.print_error("ERROR - delete_elasticsearch_docs() - no delete file present")
+                self.print_error("ERROR - delete_elasticsearch_docs() -- no delete file present")
                 return
             self.print_error("ERROR - delete_elasticsearch_docs() - {} - {}".format(type(self).__name__, str(err)))
 
@@ -272,7 +272,7 @@ class Scraper(object):
                 pattern = re.compile("(\d+) pages?")
                 self.num_pages_to_scrape = int(pattern.search(text).group(1))
         except Exception as err:
-            self.print_error("ERROR: **get_total_page_numbers()** - url: {} - err: {}".format(self.site_url, str(err)))
+            self.print_error("ERROR - get_total_page_numbers() - url: {} - err: {}".format(self.site_url, str(err)))
             return
 
     def make_soup(self, url):
@@ -307,13 +307,14 @@ class Scraper(object):
         print("[{0}] - ".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + message)
         response = None
         if SLACK["url"]:
-            errors = message.split("-")
-            try:
-                response = requests.post(
-                    SLACK["url"],
-                    data=json.dumps(
-                        {
-                            "attachments": [
+            errors = message.split("-", 3)
+            severity = errors[3].split(":")
+            response = requests.post(
+                SLACK["url"],
+                data=json.dumps(
+                    {
+                        "attachments":
+                            [
                                 {
                                     "author_name": "{}".format(errors[2]),
                                     "color": "danger",
@@ -321,60 +322,26 @@ class Scraper(object):
                                     "fields": [
                                         {
                                             "title": "Message",
-                                            "value": "{}: {}".format(getpass.getuser(), errors[3]),
+                                            "value": "{}".format(errors[3]),
                                             "short": False
-                                        },
+                                            },
+                                        {
+                                            "title": "Machine Location",
+                                            "value": "{}".format(getpass.getuser()),
+                                            "short": True
+                                            },
                                         {
                                             "title": "Time",
                                             "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-                                            "short": True
-                                        },
+                                            "short": True},
                                         {
                                             "title": "Severity",
-                                            "value": "{}".format(errors[3].split(":")[1]),
+                                            "value": "{}".format(severity[1]),
                                             "short": True
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ),
-                    headers={"Content-Type": "application/json"}
-                )
-            except:
-                # some errors are formatted differently and this block of code handles that
-                errors = message.split(":")
-                error_message = errors[0].split("-")
-                response = requests.post(
-                    SLACK["url"],
-                    data=json.dumps(
-                        {
-                            "attachments": [
-                                {
-                                    "author_name": "{}".format(error_message[2]),
-                                    "color": "danger",
-                                    "pretext": "[SCRAPER] New Alert for{}:{}".format(error_message[2], error_message[1]),
-                                    "fields": [
-                                        {
-                                            "title": "Message",
-                                            "value": "{}: {}".format(getpass.getuser(), errors[1]),
-                                            "short": False
-                                        },
-                                        {
-                                            "title": "Time",
-                                            "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-                                            "short": True
-                                        },
-                                        {
-                                            "title": "Severity",
-                                            "value": "{}".format(errors[1].split(".")[0]),
-                                            "short": True
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ),
-                    headers={"Content-Type": "application/json"}
-                )
+                                            }
+                                        ]
+                                    }
+                                ]
+                        }),
+                headers={"Content-Type": "application/json"})
         return response
