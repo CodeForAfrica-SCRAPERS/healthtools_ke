@@ -1,7 +1,6 @@
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import SITES, AWS
+from healthtools.config import SITES, ES
 from datetime import datetime
-import boto3
 
 
 class DoctorsScraper(Scraper):
@@ -21,15 +20,17 @@ class DoctorsScraper(Scraper):
         self.s3_historical_record_key = "data/archive/doctors-{}.json"
         self.delete_file = "data/delete_doctors.json"
 
-    def format_for_cloudsearch(self, entry):
-        '''
-        Format entry into cloudsearch ready document
-        '''
+    def format_for_elasticsearch(self, entry):
+        """
+        Format entry into elasticsearch ready document
+        :param entry: the data to be formatted
+        :return: dictionaries of the entry's metadata and the formatted entry
+        """
         try:
-            date_obj = datetime.strptime(entry['reg_date'], "%Y-%m-%d")
+            date_obj = datetime.strptime(entry["reg_date"], "%Y-%m-%d")
         except:
-            date_obj = datetime.strptime(entry['reg_date'], "%d-%m-%Y")
-        entry['reg_date'] = datetime.strftime(
+            date_obj = datetime.strptime(entry["reg_date"], "%d-%m-%Y")
+        entry["reg_date"] = datetime.strftime(
             date_obj, "%Y-%m-%dT%H:%M:%S.000Z")
         entry["facility"] = entry["practice_type"] = "-"
         # all bulk data need meta data describing the data
