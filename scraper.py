@@ -4,8 +4,7 @@ from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
 from healthtools.scrapers.health_facilities import HealthFacilitiesScraper
 
 if __name__ == "__main__":
-
-    # Initialize the Scrapers
+    
     doctors_scraper = DoctorsScraper()
     foreign_doctors_scraper = ForeignDoctorsScraper()
     clinical_officers_scraper = ClinicalOfficersScraper()

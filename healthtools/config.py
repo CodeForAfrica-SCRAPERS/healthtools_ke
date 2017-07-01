@@ -21,13 +21,4 @@ ES = {
     "index": os.getenv("MORPH_ES_INDEX", "healthtools-ke")
 }
 
-SLACK = {
-    "url": os.getenv("MORPH_WEBHOOK_URL")
-}
-
 TEST_DIR = os.getcwd() + "/healthtools/tests"
-
-SMALL_BATCH = 5  # No of pages from clinical officers, doctors and foreign doctors sites, scrapped in development mode
-SMALL_BATCH_HF = 100  # No of records scraped from health-facilities sites in development mode
-
-DATA_DIR = os.getcwd() + "/data/"
