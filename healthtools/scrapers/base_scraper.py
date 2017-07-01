@@ -39,7 +39,7 @@ class Scraper(object):
                 # set up authentication credentials
                 awsauth = AWS4Auth(AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], "es")
                 self.es_client = Elasticsearch(
-                    hosts=[{"host": ES["host"], "port": ES["port"]}],
+                    hosts=[{"host": ES["host"], "port": int(ES["port"])}],
                     http_auth=awsauth,
                     use_ssl=True,
                     verify_certs=True,
@@ -50,7 +50,7 @@ class Scraper(object):
             else:
                 self.es_client = Elasticsearch("{}:{}".format(ES["host"], ES["port"]))
         except Exception as err:
-            self.print_error("ERROR: Invalid Parameters For ES Client: {}".format(str(err)))
+            self.print_error("ERROR: Invalid parameters for ES Client: {}".format(str(err)))
 
         # if to save locally create relevant directories
         if not AWS["s3_bucket"] and not os.path.exists(DATA_DIR):
