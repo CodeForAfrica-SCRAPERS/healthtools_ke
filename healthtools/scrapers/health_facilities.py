@@ -42,8 +42,11 @@ class HealthFacilitiesScraper(Scraper):
             "client_id": "xMddOofHI0jOKboVxdoKAXWKpkEQAP0TuloGpfj5",
             "client_secret": "PHrUzCRFm9558DGa6Fh1hEvSCh3C9Lijfq8sbCMZhZqmANYV5ZP04mUXGJdsrZLXuZG4VCmvjShdKHwU6IRmPQld5LDzvJoguEP8AAXGJhrqfLnmtFXU3x2FO1nWLxUx"
             }
-        r = requests.post(TOKEN_URL, data=data, headers=headers)
-        self.access_token = json.loads(r.text)["access_token"]
+        try:
+            res = requests.post(TOKEN_URL, data=data, headers=headers)
+            self.access_token = json.loads(res.text)["access_token"]
+        except Exception as err:
+            self.print_error("ERROR IN - get_token() - Health Facilities Scraper - Error posted:{}".format(str(err)))
 
     def upload(self, payload):
         return self.upload_data(payload)
@@ -91,7 +94,7 @@ class HealthFacilitiesScraper(Scraper):
             print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         except Exception as err:
-            self.print_error("ERROR IN - index_for_search() Health Facilities Scraper - {}" % err)
+            self.print_error("ERROR IN - index_for_search() Health Facilities Scraper - {}".format(err))
 
     def index_for_elasticsearch(self, record):
         meta_data = {"index": {
