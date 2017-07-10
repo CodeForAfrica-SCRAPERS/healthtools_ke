@@ -46,7 +46,7 @@ class HealthFacilitiesScraper(Scraper):
             res = requests.post(TOKEN_URL, data=data, headers=headers)
             self.access_token = json.loads(res.text)["access_token"]
         except Exception as err:
-            self.print_error("ERROR IN - get_token() - Health Facilities Scraper - Error posted:{}".format(str(err)))
+            self.print_error("ERROR IN - get_token() - Health Facilities Scraper - {}".format(str(err)))
 
     def upload(self, payload):
         return self.upload_data(payload)

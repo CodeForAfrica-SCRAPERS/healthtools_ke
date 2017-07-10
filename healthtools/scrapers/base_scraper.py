@@ -308,7 +308,10 @@ class Scraper(object):
         response = None
         if SLACK["url"]:
             errors = message.split("-", 3)
-            severity = errors[3].split(":")
+            try:
+                severity = errors[3].split(":")[1]
+            except:
+                severity = errors[3]
             response = requests.post(
                 SLACK["url"],
                 data=json.dumps(
@@ -336,7 +339,7 @@ class Scraper(object):
                                             "short": True},
                                         {
                                             "title": "Severity",
-                                            "value": "{}".format(severity[1]),
+                                            "value": "{}".format(severity),
                                             "short": True
                                             }
                                         ]
