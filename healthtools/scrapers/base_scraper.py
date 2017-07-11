@@ -74,7 +74,12 @@ class Scraper(object):
             url = self.site_url.format(page_num)
             try:
                 self.retries = 0
-                scraped_page = self.scrape_page(url)
+                if "accredited" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
+                    scraped_page = self.scrape_page(page_num)
+                elif "inpatient" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
+                    scraped_page = self.scrape_page(page_num)
+                else:
+                    scraped_page = self.scrape_page(url)
                 if type(scraped_page) != tuple:
                     print "There's something wrong with the site. Proceeding to the next scraper."
                     return
@@ -212,6 +217,10 @@ class Scraper(object):
                 _type = "clinical-officers"
             elif "doctors" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
                 _type = "doctors"
+            elif "accredited" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
+                _type = "nhif-accredited"
+            elif "inpatient" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
+                _type = "nhif-inpatient"
             else:
                 _type = "health-facilities"
             # get documents to be deleted
