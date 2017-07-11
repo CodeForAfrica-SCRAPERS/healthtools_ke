@@ -7,6 +7,8 @@ They retrieve data from the following sites:
 - Foreign doctors: http://medicalboard.co.ke/online-services/foreign-doctors-license-register
 - Clinical officers: http://clinicalofficerscouncil.org/online-services/retention/
 - Health Facilities: http://kmhfl.health.go.ke
+- NHIF accredited facilities: http://www.nhif.or.ke/healthinsurance/medicalFacilities
+- NHIF accredited inpatient facilities: http://www.nhif.or.ke/healthinsurance/inpatientServices
 
 They currently run on morph.io.
 
@@ -48,7 +50,7 @@ You can now run the scrapers `$ python scraper.py` (It might take a while)
 
 **FOR DEVELOPMENT PURPOSES**
 
-Set the **BATCH** and **HF_BATCH** (for health facilities) in the config file that will ensure the scraper doesn't scrape entire sites but just the number 
+Set the **SMALL_BATCH**, **SMALL_BATCH_HF** (for health facilities scrapers) and **SMALL_BATCH_NHIF** (for NHIF scrapers) in the config file that will ensure the scraper doesn't scrape entire sites but just the number 
 of pages that you would like it to scrape defined by this variable.
 
 use `$ python scraper.py small_batch` to run the scrapers
