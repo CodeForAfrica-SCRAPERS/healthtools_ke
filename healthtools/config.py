@@ -7,7 +7,7 @@ SITES = {
     "FOREIGN_DOCTORS": "http://medicalboard.co.ke/online-services/foreign-doctors-license-register/?currpage={}",
     "CLINICAL_OFFICERS": "http://clinicalofficerscouncil.org/online-services/retention/?currpage={}",
     "TOKEN_URL": "http://api.kmhfl.health.go.ke/o/token/"
-    }
+}
 
 AWS = {
     "aws_access_key_id": os.getenv("MORPH_AWS_ACCESS_KEY"),
@@ -18,8 +18,8 @@ AWS = {
 
 ES = {
     "host": os.getenv("MORPH_ES_HOST", "127.0.0.1"),
-    "port": os.getenv("MORPH_ES_PORT", "9200"),
-    "index": "healthtools"
+    "port": os.getenv("MORPH_ES_PORT", 9200),
+    "index": os.getenv("MORPH_ES_INDEX", "healthtools-ke")
 }
 
 SLACK = {
