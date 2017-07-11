@@ -211,11 +211,10 @@ class Scraper(object):
                 }
             }
             try:
-                r = self.es_client.delete_by_query(
-                    index=ES["index"], doc_type=_type, body=delete_docs)
-                print r
+                self.es_client.delete_by_query(index=ES["index"], doc_type=_type, body=delete_docs)
             except Exception as err:
-                print err
+                self.print_error("ERROR - delete_elasticsearch_docs() - {} - {}".format(type(self).__name__, str(err)))
+
         except Exception as err:
           self.print_error("ERROR - delete_elasticsearch_docs() - {} - {}".format(type(self).__name__, str(err)))
 
