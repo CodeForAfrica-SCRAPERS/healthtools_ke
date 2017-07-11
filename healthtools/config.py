@@ -1,4 +1,3 @@
-
 import os
 
 # sites to be scraped
