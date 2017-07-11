@@ -37,8 +37,8 @@ class Scraper(object):
             # client host for aws elastic search service
             if "aws" in ES["host"]:
                 # set up authentication credentials
-                awsauth = AWS4Auth(
-                    AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], "es")
+                awsauth = AWS4Auth(AWS["aws_access_key_id"],
+                 AWS["aws_secret_access_key"], AWS["region_name"], "es")
                 self.es_client = Elasticsearch(
                     hosts=[{"host": ES["host"], "port": int(ES["port"])}],
                     http_auth=awsauth,
@@ -49,8 +49,7 @@ class Scraper(object):
                 )
 
             else:
-                self.es_client = Elasticsearch(
-                    "{}:{}".format(ES["host"], ES["port"]))
+                self.es_client = Elasticsearch("{}:{}".format(ES["host"], ES["port"]))
         except Exception as err:
             self.print_error("ERROR: Invalid parameters for ES Client: {}".format(str(err)))
 
@@ -88,7 +87,7 @@ class Scraper(object):
                 self.print_error("ERROR - scrape_site() - source: {} page: {} - {}".format(url, page_num, err))
                 continue
         print "[{0}] - Scraper completed. {1} documents retrieved.".format(
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(all_results) / 2)  # don't count indexing data
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(all_results)/2)  # don't count indexing data
 
         if all_results:
             all_results_json = json.dumps(all_results)
@@ -146,10 +145,8 @@ class Scraper(object):
         Upload data to Elastic Search
         '''
         try:
-            # bulk index the data and use refresh to ensure that our data will
-            # be immediately available
-            response = self.es_client.bulk(
-                index=ES["index"], body=payload, refresh=True)
+            # bulk index the data and use refresh to ensure that our data will be immediately available
+            response = self.es_client.bulk( index=ES["index"], body=payload, refresh=True)
             print response
             return response
         except Exception as err:
@@ -173,8 +170,7 @@ class Scraper(object):
 
                     # archive historical data
                     self.s3.copy_object(Bucket=AWS["s3_bucket"],
-                                        CopySource="{}/".format(
-                                            AWS["s3_bucket"]) + self.s3_key,
+                                        CopySource="{}/".format(AWS["s3_bucket"]) + self.s3_key,
                                         Key=self.s3_historical_record_key.format(
                                             date))
                     print "[{0}] - Archived data has been updated.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))

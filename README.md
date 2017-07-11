@@ -59,3 +59,4 @@ _**make sure if you use elasticsearch locally, it's running**_
 
 Use nosetests to run tests (with stdout) like this:
 ```$ nosetests --nocapture```
+
