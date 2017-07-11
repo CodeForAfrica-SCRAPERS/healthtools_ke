@@ -37,8 +37,7 @@ class Scraper(object):
             # client host for aws elastic search service
             if "aws" in ES["host"]:
                 # set up authentication credentials
-                awsauth = AWS4Auth(AWS["aws_access_key_id"],
-                 AWS["aws_secret_access_key"], AWS["region_name"], "es")
+                awsauth = AWS4Auth(AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], "es")
                 self.es_client = Elasticsearch(
                     hosts=[{"host": ES["host"], "port": int(ES["port"])}],
                     http_auth=awsauth,
@@ -146,12 +145,10 @@ class Scraper(object):
         '''
         try:
             # bulk index the data and use refresh to ensure that our data will be immediately available
-            response = self.es_client.bulk( index=ES["index"], body=payload, refresh=True)
-            print response
+            response = self.es_client.bulk(index=ES["index"], body=payload, refresh=True)
             return response
         except Exception as err:
-            self.print_error(
-                "ERROR - upload_data() - {} - {}".format(type(self).__name__, str(err)))
+            self.print_error("ERROR - upload_data() - {} - {}".format(type(self).__name__, str(err)))
 
     def archive_data(self, payload):
         '''
@@ -199,8 +196,7 @@ class Scraper(object):
         Delete documents that were uploaded to elasticsearch in the last scrape
         '''
         try:
-            # get the type to use with the index depending on the calling
-            # method
+            # get the type to use with the index depending on the calling method
             if "clinical" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
                 _type = "clinical-officers"
             elif "doctors" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
@@ -221,7 +217,7 @@ class Scraper(object):
             except Exception as err:
                 print err
         except Exception as err:
-            print err
+          self.print_error("ERROR - delete_elasticsearch_docs() - {} - {}".format(type(self).__name__, str(err)))
 
     def get_total_number_of_pages(self):
         '''
@@ -232,8 +228,7 @@ class Scraper(object):
             if self.small_batch:
                 self.num_pages_to_scrape = SMALL_BATCH
             else:
-                soup = self.make_soup(
-                    self.site_url.format(1))  # get first page
+                soup = self.make_soup(self.site_url.format(1))  # get first page
                 text = soup.find("div", {"id": "tnt_pagination"}).getText()
                 # what number of pages looks like
                 pattern = re.compile("(\d+) pages?")
