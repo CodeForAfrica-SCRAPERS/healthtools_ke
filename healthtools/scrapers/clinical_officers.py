@@ -16,6 +16,7 @@ class ClinicalOfficersScraper(Scraper):
             "address", "qualifications", "id",
             ]
 
+        self._type = "clinical-officers"
         self.s3_key = "data/clinical_officers.json"
         self.s3_historical_record_key = "data/archive/clinical_officers-{}.json"
         self.delete_file = "data/delete_clinical_officers.json"
@@ -36,7 +37,7 @@ class ClinicalOfficersScraper(Scraper):
         meta_dict = {
             "index": {
                 "_index": ES["index"],
-                "_type": "clinical-officers",
+                "_type": self._type,
                 "_id": entry["id"]
                 }
             }

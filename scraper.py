@@ -4,6 +4,7 @@ from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
 from healthtools.scrapers.health_facilities import HealthFacilitiesScraper
 from healthtools.scrapers.nhif_accredited_facilities import NhifAccreditedFacilitiesScraper
 from healthtools.scrapers.nhif_accredited_inpatient_facilities import NhifInpatientScraper
+from healthtools.scrapers.nhif_accredited_outpatient_facilities import NhifOutpatientScraper
 
 if __name__ == "__main__":
 
@@ -14,8 +15,10 @@ if __name__ == "__main__":
     healthfacilities_scraper = HealthFacilitiesScraper()
     nhif_accredited_facilities = NhifAccreditedFacilitiesScraper()
     nhif_accredited_inpatient = NhifInpatientScraper()
+    nhif_accredited_outpatient = NhifOutpatientScraper()
 
     # scraping you softly with these bots...
+    nhif_accredited_outpatient_result = nhif_accredited_outpatient.scrape_site()
     nhif_accredited_inpatient_result = nhif_accredited_inpatient.scrape_site()
     nhif_accredited_result = nhif_accredited_facilities.scrape_site()
     doctors_result = doctors_scraper.scrape_site()
