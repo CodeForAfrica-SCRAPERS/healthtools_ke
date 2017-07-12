@@ -5,9 +5,9 @@ from healthtools.scrapers.doctors import DoctorsScraper
 from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
 from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
 from healthtools.scrapers.health_facilities import HealthFacilitiesScraper
-from healthtools.scrapers.nhif_accredited_facilities import NhifAccreditedFacilitiesScraper
-from healthtools.scrapers.nhif_accredited_inpatient_facilities import NhifInpatientScraper
-from healthtools.scrapers.nhif_accredited_outpatient_facilities import NhifOutpatientScraper
+from healthtools.scrapers.nhif_outpatient_cs_facilities import NhifOutpatientCsScraper
+from healthtools.scrapers.nhif_inpatient_facilities import NhifInpatientScraper
+from healthtools.scrapers.nhif_outpatient_facilities import NhifOutpatientScraper
 from healthtools.config import TEST_DIR, SLACK, AWS
 
 
@@ -18,7 +18,7 @@ class TestScrapers(unittest.TestCase):
         self.foreign_doctors_scraper = ForeignDoctorsScraper()
         self.clinical_officers_scraper = ClinicalOfficersScraper()
         self.health_facilities_scraper = HealthFacilitiesScraper()
-        self.nhif_accredited_scraper = NhifAccreditedFacilitiesScraper()
+        self.nhif_accredited_scraper = NhifOutpatientCsScraper()
         self.nhif_inpatient_scraper = NhifInpatientScraper()
         self.nhif_outpatient_scraper = NhifOutpatientScraper()
 

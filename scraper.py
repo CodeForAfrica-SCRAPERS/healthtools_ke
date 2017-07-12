@@ -2,9 +2,9 @@ from healthtools.scrapers.doctors import DoctorsScraper
 from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
 from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
 from healthtools.scrapers.health_facilities import HealthFacilitiesScraper
-from healthtools.scrapers.nhif_accredited_facilities import NhifAccreditedFacilitiesScraper
-from healthtools.scrapers.nhif_accredited_inpatient_facilities import NhifInpatientScraper
-from healthtools.scrapers.nhif_accredited_outpatient_facilities import NhifOutpatientScraper
+from healthtools.scrapers.nhif_outpatient_cs_facilities import NhifOutpatientCsScraper
+from healthtools.scrapers.nhif_inpatient_facilities import NhifInpatientScraper
+from healthtools.scrapers.nhif_outpatient_facilities import NhifOutpatientScraper
 
 if __name__ == "__main__":
 
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     foreign_doctors_scraper = ForeignDoctorsScraper()
     clinical_officers_scraper = ClinicalOfficersScraper()
     healthfacilities_scraper = HealthFacilitiesScraper()
-    nhif_accredited_facilities = NhifAccreditedFacilitiesScraper()
+    nhif_accredited_facilities = NhifOutpatientCsScraper()
     nhif_accredited_inpatient = NhifInpatientScraper()
     nhif_accredited_outpatient = NhifOutpatientScraper()
 

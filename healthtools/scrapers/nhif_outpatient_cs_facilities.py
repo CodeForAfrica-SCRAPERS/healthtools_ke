@@ -2,11 +2,11 @@ from healthtools.scrapers.base_scraper import Scraper
 from healthtools.config import SITES, ES, SMALL_BATCH_NHIF
 
 
-class NhifAccreditedFacilitiesScraper(Scraper):
-    """Scraper for the NHIF accredited facilities"""
+class NhifOutpatientCsScraper(Scraper):
+    """Scraper for the NHIF outpatient facilities extended to civil servants"""
     def __init__(self):
-        super(NhifAccreditedFacilitiesScraper, self).__init__()
-        self.site_url = SITES["NHIF-MEDICAL-FACILITIES"]
+        super(NhifOutpatientCsScraper, self).__init__()
+        self.site_url = SITES["NHIF-OUTPATIENT_CS"]
         self._type = "nhif-accredited"
         self.fields = ["code", "hospital", "nhif_branch", "job_group", "cover", "id"]
         self.s3_key = "data/nhif_accredited_facilities.json"
