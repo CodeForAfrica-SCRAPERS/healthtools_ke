@@ -7,11 +7,11 @@ class NhifOutpatientCsScraper(Scraper):
     def __init__(self):
         super(NhifOutpatientCsScraper, self).__init__()
         self.site_url = SITES["NHIF-OUTPATIENT_CS"]
-        self._type = "nhif-accredited"
+        self._type = "nhif-outpatient-cs"
         self.fields = ["code", "hospital", "nhif_branch", "job_group", "cover", "id"]
-        self.s3_key = "data/nhif_accredited_facilities.json"
-        self.s3_historical_record_key = "data/archive/nhif_accredited_facilities-{}.json"
-        self.delete_file = "data/delete_nhif_accredited_facilities.json"
+        self.s3_key = "data/nhif_outpatient_cs_facilities.json"
+        self.s3_historical_record_key = "data/archive/nhif_outpatient_cs_facilities-{}.json"
+        self.delete_file = "data/delete_nhif_outpatient_cs_facilities.json"
 
     def scrape_page(self, tab_num):
         """
