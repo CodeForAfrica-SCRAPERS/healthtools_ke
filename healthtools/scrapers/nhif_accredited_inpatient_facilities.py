@@ -3,11 +3,12 @@ from healthtools.config import SITES, ES, SMALL_BATCH_NHIF
 
 
 class NhifInpatientScraper(Scraper):
-    """Scraper for the NHIF accredited facilities"""
+    """Scraper for the NHIF accredited inpatient facilities"""
     def __init__(self):
         super(NhifInpatientScraper, self).__init__()
         self.site_url = SITES["NHIF-INPATIENT"]
         self.fields = ["hospital", "postal_addr", "beds", "branch", "category", "id"]
+        self._type = "nhif-inpatient"
         self.s3_key = "data/nhif_accredited_inpatient_facilities.json"
         self.s3_historical_record_key = "data/archive/nhif_accredited_inpatient_facilities-{}.json"
         self.delete_file = "data/delete_nhif_accredited_inpatient_facilities.json"
@@ -41,14 +42,14 @@ class NhifInpatientScraper(Scraper):
                         entry["region"] = "Nairobi Region"
                     else:
                         entry["region"] = tab[1]
-                    meta = self.format_for_elasticsearch(entry)
+                    meta, entry = self.format_for_elasticsearch(entry)
                     entries.append(meta)
                     entries.append(entry)
 
                     delete_batch.append({
                         "delete": {
                             "_index": ES["index"],
-                            "_type": "nhif-accredited",
+                            "_type": self._type,
                             "_id": entry["id"]
                         }
                     })
@@ -74,19 +75,3 @@ class NhifInpatientScraper(Scraper):
         except Exception as err:
             self.print_error("ERROR - get_total_page_numbers() - url: {} - err: {}".format(self.site_url, str(err)))
             return
-
-    def format_for_elasticsearch(self, entry):
-        """
-        Format entry into elasticsearch ready document
-        :param entry: the data to be formatted
-        :return: dictionaries of the entry's metadata and the formatted entry
-        """
-        # all bulk data need meta data describing the data
-        meta_dict = {
-            "index": {
-                "_index": ES["index"],
-                "_type": "nhif-inpatient",
-                "_id": entry["id"]
-            }
-        }
-        return meta_dict

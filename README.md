@@ -9,6 +9,7 @@ They retrieve data from the following sites:
 - Health Facilities: http://kmhfl.health.go.ke
 - NHIF accredited facilities: http://www.nhif.or.ke/healthinsurance/medicalFacilities
 - NHIF accredited inpatient facilities: http://www.nhif.or.ke/healthinsurance/inpatientServices
+- NHIF accredited outpatient facilities: http://www.nhif.or.ke/healthinsurance/outpatientServices
 
 They currently run on morph.io.
 

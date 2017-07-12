@@ -14,6 +14,8 @@ class ForeignDoctorsScraper(Scraper):
             "name", "reg_no", "postal_address", "qualifications",
             "facility", "practice_type", "id"
             ]
+
+        self._type = "doctors"
         self.s3_key = "data/foreign_doctors.json"
         self.s3_historical_record_key = "data/archive/foreign_doctors-{}.json"
         self.delete_file = "data/delete_foreign_doctors.json"
@@ -30,7 +32,7 @@ class ForeignDoctorsScraper(Scraper):
         meta_dict = {
             "index": {
                 "_index": ES["index"],
-                "_type": "doctors",
+                "_type": self._type,
                 "_id": entry["id"]
                 }
             }

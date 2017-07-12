@@ -7,6 +7,7 @@ from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
 from healthtools.scrapers.health_facilities import HealthFacilitiesScraper
 from healthtools.scrapers.nhif_accredited_facilities import NhifAccreditedFacilitiesScraper
 from healthtools.scrapers.nhif_accredited_inpatient_facilities import NhifInpatientScraper
+from healthtools.scrapers.nhif_accredited_outpatient_facilities import NhifOutpatientScraper
 from healthtools.config import TEST_DIR, SLACK, AWS
 
 
@@ -19,6 +20,7 @@ class TestScrapers(unittest.TestCase):
         self.health_facilities_scraper = HealthFacilitiesScraper()
         self.nhif_accredited_scraper = NhifAccreditedFacilitiesScraper()
         self.nhif_inpatient_scraper = NhifInpatientScraper()
+        self.nhif_outpatient_scraper = NhifOutpatientScraper()
 
     def test_it_gets_the_total_number_of_pages(self):
         self.doctors_scraper.get_total_number_of_pages()
@@ -45,6 +47,10 @@ class TestScrapers(unittest.TestCase):
 
     def test_it_scrapes_nhif_inpatient_page(self):
         entries = self.nhif_inpatient_scraper.scrape_page(1)
+        self.assertTrue(len(entries) > 1)
+
+    def test_it_scrapes_nhif_outpatient_page(self):
+        entries = self.nhif_outpatient_scraper.scrape_page(1)
         self.assertTrue(len(entries) > 1)
 
     def test_doctors_scraper_uploads_to_elasticsearch(self):
@@ -81,6 +87,12 @@ class TestScrapers(unittest.TestCase):
         with open(TEST_DIR + "/dummy_files/nhif_inpatient_facilities.json", "r") as my_file:
             data = my_file.read()
             response = self.nhif_inpatient_scraper.upload_data(json.loads(data))
+            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
+
+    def test_nhif_outpatient_scraper_uploads_to_elasticsearch(self):
+        with open(TEST_DIR + "/dummy_files/nhif_outpatient_facilities.json", "r") as my_file:
+            data = my_file.read()
+            response = self.nhif_outpatient_scraper.upload_data(json.loads(data))
             self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
 
     def test_doctors_scraper_archives_to_s3(self):

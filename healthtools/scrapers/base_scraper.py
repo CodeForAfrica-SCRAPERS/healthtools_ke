@@ -25,6 +25,8 @@ class Scraper(object):
         self.s3_key = None
         self.document_id = 0  # id for each entry, to be incremented
         self.delete_file = None  # contains docs to be deleted after scrape
+        self._type = None  # elastic search for type
+        self.NHIF_SERVICES = ["accredited", "inpatient", "outpatient"]
 
         self.s3_historical_record_key = None  # s3 historical_record key
         self.s3 = boto3.client("s3", **{
@@ -74,9 +76,9 @@ class Scraper(object):
             url = self.site_url.format(page_num)
             try:
                 self.retries = 0
-                if "accredited" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
-                    scraped_page = self.scrape_page(page_num)
-                elif "inpatient" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
+                nhif = set(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower().split()) &\
+                    set(self.NHIF_SERVICES)
+                if nhif:
                     scraped_page = self.scrape_page(page_num)
                 else:
                     scraped_page = self.scrape_page(url)
@@ -142,7 +144,7 @@ class Scraper(object):
                 delete_batch.append({
                     "delete": {
                         "_index": ES["index"],
-                        "_type": meta["index"]["_type"],
+                        "_type": self._type,
                         "_id": entry["id"]
                     }
                 })
@@ -212,17 +214,6 @@ class Scraper(object):
         Delete documents that were uploaded to elasticsearch in the last scrape
         '''
         try:
-            # get the type to use with the index depending on the calling method
-            if "clinical" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
-                _type = "clinical-officers"
-            elif "doctors" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
-                _type = "doctors"
-            elif "accredited" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
-                _type = "nhif-accredited"
-            elif "inpatient" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
-                _type = "nhif-inpatient"
-            else:
-                _type = "health-facilities"
             # get documents to be deleted
             if AWS["s3_bucket"]:
                 delete_docs = self.s3.get_object(
@@ -246,7 +237,7 @@ class Scraper(object):
                         delete_records.append({
                             "delete": {
                                 "_index": ES["index"],
-                                "_type": _type,
+                                "_type": self._type,
                                 "_id": record["delete"]["_id"]
                             }
                         })
@@ -254,7 +245,7 @@ class Scraper(object):
                         delete_records.append({
                             "delete": {
                                 "_index": ES["index"],
-                                "_type": _type,
+                                "_type": self._type,
                                 "_id": record["id"]
                             }
                         })
@@ -301,9 +292,9 @@ class Scraper(object):
         # all bulk data need meta data describing the data
         meta_dict = {
             "index": {
-                "_index": "index",
-                "_type": "type",
-                "_id": "id"
+                "_index": ES["index"],
+                "_type": self._type,
+                "_id": entry["id"]
             }
         }
         return meta_dict, entry

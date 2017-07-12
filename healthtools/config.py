@@ -7,7 +7,8 @@ SITES = {
     "CLINICAL_OFFICERS": "http://clinicalofficerscouncil.org/online-services/retention/?currpage={}",
     "TOKEN_URL": "http://api.kmhfl.health.go.ke/o/token/",
     "NHIF-MEDICAL-FACILITIES": "http://www.nhif.or.ke/healthinsurance/medicalFacilities",
-    "NHIF-INPATIENT": "http://www.nhif.or.ke/healthinsurance/inpatientServices"
+    "NHIF-INPATIENT": "http://www.nhif.or.ke/healthinsurance/inpatientServices",
+    "NHIF-OUTPATIENT": "http://www.nhif.or.ke/healthinsurance/outpatientServices"
 }
 
 AWS = {
