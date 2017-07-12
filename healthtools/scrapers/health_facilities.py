@@ -25,6 +25,7 @@ class HealthFacilitiesScraper(Scraper):
     def __init__(self):
         super(HealthFacilitiesScraper, self).__init__()
         self.access_token = None
+        self._type = "health-facilities"
         self.s3_key = "data/health_facilities.json"
         self.s3_historical_record_key = "data/archive/health_facilities-{}.json"
         self.delete_file = "data/delete_health_facilities.json"
@@ -99,7 +100,7 @@ class HealthFacilitiesScraper(Scraper):
     def index_for_elasticsearch(self, record):
         meta_data = {"index": {
             "_index": ES["index"],
-            "_type": "health-facilities",
+            "_type": self._type,
             "_id": record["code"]
             }}
         health_facilities = {
@@ -124,7 +125,7 @@ class HealthFacilitiesScraper(Scraper):
         return meta_data, health_facilities
 
     def delete_payload(self, record):
-        return {"delete": {"_index": ES["index"], "_type": "health-facilities", "_id": record["code"]}}
+        return {"delete": {"_index": ES["index"], "_type": self._type, "_id": record["code"]}}
 
     def scrape_data(self):
         self.get_token()

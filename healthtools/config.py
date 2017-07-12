@@ -6,8 +6,9 @@ SITES = {
     "FOREIGN_DOCTORS": "http://medicalboard.co.ke/online-services/foreign-doctors-license-register/?currpage={}",
     "CLINICAL_OFFICERS": "http://clinicalofficerscouncil.org/online-services/retention/?currpage={}",
     "TOKEN_URL": "http://api.kmhfl.health.go.ke/o/token/",
-    "NHIF-MEDICAL-FACILITIES": "http://www.nhif.or.ke/healthinsurance/medicalFacilities",
-    "NHIF-INPATIENT": "http://www.nhif.or.ke/healthinsurance/inpatientServices"
+    "NHIF-OUTPATIENT_CS": "http://www.nhif.or.ke/healthinsurance/medicalFacilities",
+    "NHIF-INPATIENT": "http://www.nhif.or.ke/healthinsurance/inpatientServices",
+    "NHIF-OUTPATIENT": "http://www.nhif.or.ke/healthinsurance/outpatientServices"
 }
 
 AWS = {

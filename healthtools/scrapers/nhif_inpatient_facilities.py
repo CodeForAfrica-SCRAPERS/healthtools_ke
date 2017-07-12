@@ -2,15 +2,16 @@ from healthtools.scrapers.base_scraper import Scraper
 from healthtools.config import SITES, ES, SMALL_BATCH_NHIF
 
 
-class NhifAccreditedFacilitiesScraper(Scraper):
-    """Scraper for the NHIF accredited facilities"""
+class NhifInpatientScraper(Scraper):
+    """Scraper for the NHIF accredited inpatient facilities"""
     def __init__(self):
-        super(NhifAccreditedFacilitiesScraper, self).__init__()
-        self.site_url = SITES["NHIF-MEDICAL-FACILITIES"]
-        self.fields = ["code", "hospital", "nhif_branch", "job_group", "cover", "id"]
-        self.s3_key = "data/nhif_accredited_facilities.json"
-        self.s3_historical_record_key = "data/archive/nhif_accredited_facilities-{}.json"
-        self.delete_file = "data/delete_nhif_accredited_facilities.json"
+        super(NhifInpatientScraper, self).__init__()
+        self.site_url = SITES["NHIF-INPATIENT"]
+        self.fields = ["hospital", "postal_addr", "beds", "branch", "category", "id"]
+        self._type = "nhif-inpatient"
+        self.s3_key = "data/nhif_accredited_inpatient_facilities.json"
+        self.s3_historical_record_key = "data/archive/nhif_accredited_inpatient_facilities-{}.json"
+        self.delete_file = "data/delete_nhif_accredited_inpatient_facilities.json"
 
     def scrape_page(self, tab_num):
         """
@@ -20,14 +21,12 @@ class NhifAccreditedFacilitiesScraper(Scraper):
         """
         try:
             soup = self.make_soup(self.site_url)
-            # tab numbers start from 4 in the website
-            counties = soup.find("div", {"id": "collapse-{}".format(tab_num + 3)}).find_all('a')
-            # ignore the last link as it is a reference to the site url
-            tabs = [(county["href"].split("#")[1], county.getText()) for county in counties[:-1]]
+            regions = soup.findAll("a", {"data-toggle": "tab"})
+            tabs = [(region["href"].split("#")[1], region.getText()) for region in regions]
             entries = []
             delete_batch = []
             for tab in tabs:
-                table = soup.find('div', {"id": tab[0]}).find("tbody")
+                table = soup.find("div", {"id": tab[0]}).tbody
                 if self.small_batch:
                     rows = table.find_all("tr")[:SMALL_BATCH_NHIF]
                 else:
@@ -38,15 +37,19 @@ class NhifAccreditedFacilitiesScraper(Scraper):
                     columns.append(self.document_id)
 
                     entry = dict(zip(self.fields, columns))
-                    entry["county"] = tab[1]
-                    meta = self.format_for_elasticsearch(entry)
+                    # nairobi region isn't included correctly
+                    if tab[1] == "":
+                        entry["region"] = "Nairobi Region"
+                    else:
+                        entry["region"] = tab[1]
+                    meta, entry = self.format_for_elasticsearch(entry)
                     entries.append(meta)
                     entries.append(entry)
 
                     delete_batch.append({
                         "delete": {
                             "_index": ES["index"],
-                            "_type": "nhif-accredited",
+                            "_type": self._type,
                             "_id": entry["id"]
                         }
                     })
@@ -68,23 +71,7 @@ class NhifAccreditedFacilitiesScraper(Scraper):
             soup = self.make_soup(self.site_url)
             # get number of tabs to scrape
             self.num_pages_to_scrape = len(
-                [tag.name for tag in soup.find("div", {"id": "accordion"}) if tag.name == 'div'])
+                [tag.name for tag in soup.find("div", {"class": "tab-content"}) if tag.name == 'div'])
         except Exception as err:
             self.print_error("ERROR - get_total_page_numbers() - url: {} - err: {}".format(self.site_url, str(err)))
             return
-
-    def format_for_elasticsearch(self, entry):
-        """
-        Format entry into elasticsearch ready document
-        :param entry: the data to be formatted
-        :return: dictionaries of the entry's metadata and the formatted entry
-        """
-        # all bulk data need meta data describing the data
-        meta_dict = {
-            "index": {
-                "_index": ES["index"],
-                "_type": "nhif-accredited",
-                "_id": entry["id"]
-            }
-        }
-        return meta_dict
