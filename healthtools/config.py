@@ -1,16 +1,5 @@
 import os
 
-# sites to be scraped
-SITES = {
-    "DOCTORS": "http://medicalboard.co.ke/online-services/retention/?currpage={}",
-    "FOREIGN_DOCTORS": "http://medicalboard.co.ke/online-services/foreign-doctors-license-register/?currpage={}",
-    "CLINICAL_OFFICERS": "http://clinicalofficerscouncil.org/online-services/retention/?currpage={}",
-    "TOKEN_URL": "http://api.kmhfl.health.go.ke/o/token/",
-    "NHIF-OUTPATIENT_CS": "http://www.nhif.or.ke/healthinsurance/medicalFacilities",
-    "NHIF-INPATIENT": "http://www.nhif.or.ke/healthinsurance/inpatientServices",
-    "NHIF-OUTPATIENT": "http://www.nhif.or.ke/healthinsurance/outpatientServices"
-}
-
 AWS = {
     "aws_access_key_id": os.getenv("MORPH_AWS_ACCESS_KEY"),
     "aws_secret_access_key": os.getenv("MORPH_AWS_SECRET_KEY"),
@@ -35,3 +24,14 @@ SMALL_BATCH_HF = 100  # No of records scraped from health-facilities sites in de
 SMALL_BATCH_NHIF = 10  # No of nhif accredited facilities scraped in development mode
 
 DATA_DIR = os.getcwd() + "/data/"
+
+# sites to be scraped
+SITES = {
+    "DOCTORS": "http://medicalboard.co.ke/online-services/retention/?currpage={}",
+    "FOREIGN_DOCTORS": "http://medicalboard.co.ke/online-services/foreign-doctors-license-register/?currpage={}",
+    "CLINICAL_OFFICERS": "http://clinicalofficerscouncil.org/online-services/retention/?currpage={}",
+    "TOKEN_URL": "http://api.kmhfl.health.go.ke/o/token/",
+    "NHIF-OUTPATIENT_CS": "http://www.nhif.or.ke/healthinsurance/medicalFacilities",
+    "NHIF-INPATIENT": "http://www.nhif.or.ke/healthinsurance/inpatientServices",
+    "NHIF-OUTPATIENT": "http://www.nhif.or.ke/healthinsurance/outpatientServices"
+}

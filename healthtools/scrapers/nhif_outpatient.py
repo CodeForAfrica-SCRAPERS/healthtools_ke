@@ -1,4 +1,4 @@
-from healthtools.scrapers.nhif_outpatient_cs_facilities import NhifOutpatientCsScraper
+from healthtools.scrapers.nhif_outpatient_cs import NhifOutpatientCsScraper
 from healthtools.config import SITES, ES, SMALL_BATCH_NHIF
 
 
@@ -9,9 +9,9 @@ class NhifOutpatientScraper(NhifOutpatientCsScraper):
         self.site_url = SITES["NHIF-OUTPATIENT"]
         self.fields = ["code", "hospital", "nhif_branch", "id"]
         self._type = "nhif-outpatient"
-        self.s3_key = "data/nhif_accredited_outpatient_facilities.json"
-        self.s3_historical_record_key = "data/archive/nhif_accredited_outpatient_facilities-{}.json"
-        self.delete_file = "data/delete_nhif_accredited_outpatient_facilities.json"
+        self.s3_key = "data/nhif_outpatient.json"
+        self.s3_historical_record_key = "data/archive/nhif_outpatient-{}.json"
+        self.delete_file = "data/delete_nhif_outpatient.json"
 
     def get_total_number_of_pages(self):
         """

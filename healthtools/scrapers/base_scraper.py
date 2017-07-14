@@ -26,7 +26,7 @@ class Scraper(object):
         self.document_id = 0  # id for each entry, to be incremented
         self.delete_file = None  # contains docs to be deleted after scrape
         self._type = None  # elastic search for type
-        self.NHIF_SERVICES = ["accredited", "inpatient", "outpatient"]
+        self.NHIF_SERVICES = ["inpatient", "outpatient", "outpatient-cs"]
 
         self.s3_historical_record_key = None  # s3 historical_record key
         self.s3 = boto3.client("s3", **{

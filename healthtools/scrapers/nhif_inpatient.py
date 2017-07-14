@@ -2,16 +2,16 @@ from healthtools.scrapers.base_scraper import Scraper
 from healthtools.config import SITES, ES, SMALL_BATCH_NHIF
 
 
-class NhifOutpatientCsScraper(Scraper):
-    """Scraper for the NHIF outpatient facilities extended to civil servants"""
+class NhifInpatientScraper(Scraper):
+    """Scraper for the NHIF accredited inpatient facilities"""
     def __init__(self):
-        super(NhifOutpatientCsScraper, self).__init__()
-        self.site_url = SITES["NHIF-OUTPATIENT_CS"]
-        self._type = "nhif-outpatient-cs"
-        self.fields = ["code", "hospital", "nhif_branch", "job_group", "cover", "id"]
-        self.s3_key = "data/nhif_outpatient_cs_facilities.json"
-        self.s3_historical_record_key = "data/archive/nhif_outpatient_cs_facilities-{}.json"
-        self.delete_file = "data/delete_nhif_outpatient_cs_facilities.json"
+        super(NhifInpatientScraper, self).__init__()
+        self.site_url = SITES["NHIF-INPATIENT"]
+        self.fields = ["hospital", "postal_addr", "beds", "branch", "category", "id"]
+        self._type = "nhif-inpatient"
+        self.s3_key = "data/nhif_inpatient.json"
+        self.s3_historical_record_key = "data/archive/nhif_inpatient-{}.json"
+        self.delete_file = "data/delete_nhif_inpatient.json"
 
     def scrape_page(self, tab_num):
         """
@@ -21,15 +21,12 @@ class NhifOutpatientCsScraper(Scraper):
         """
         try:
             soup = self.make_soup(self.site_url)
-            # tab numbers start from 4 in the website
-            data = soup.find("div", {"id": "collapse-{}".format(tab_num + 3)})
-            counties = data.find_all('a')
-            # ignore the last link as it is a reference to the site url
-            tabs = [(county["href"].split("#")[1], county.getText()) for county in counties[:-1]]
+            regions = soup.findAll("a", {"data-toggle": "tab"})
+            tabs = [(region["href"].split("#")[1], region.getText()) for region in regions]
             entries = []
             delete_batch = []
             for tab in tabs:
-                table = data.find('div', {"id": tab[0]}).tbody
+                table = soup.find("div", {"id": tab[0]}).tbody
                 if self.small_batch:
                     rows = table.find_all("tr")[:SMALL_BATCH_NHIF]
                 else:
@@ -40,7 +37,11 @@ class NhifOutpatientCsScraper(Scraper):
                     columns.append(self.document_id)
 
                     entry = dict(zip(self.fields, columns))
-                    entry["county"] = tab[1]
+                    # nairobi region isn't included correctly
+                    if tab[1] == "":
+                        entry["region"] = "Nairobi Region"
+                    else:
+                        entry["region"] = tab[1]
                     meta, entry = self.format_for_elasticsearch(entry)
                     entries.append(meta)
                     entries.append(entry)
@@ -70,7 +71,7 @@ class NhifOutpatientCsScraper(Scraper):
             soup = self.make_soup(self.site_url)
             # get number of tabs to scrape
             self.num_pages_to_scrape = len(
-                [tag.name for tag in soup.find("div", {"id": "accordion"}) if tag.name == 'div'])
+                [tag.name for tag in soup.find("div", {"class": "tab-content"}) if tag.name == 'div'])
         except Exception as err:
             self.print_error("ERROR - get_total_page_numbers() - url: {} - err: {}".format(self.site_url, str(err)))
             return

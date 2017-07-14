@@ -2,9 +2,9 @@ from healthtools.scrapers.doctors import DoctorsScraper
 from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
 from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
 from healthtools.scrapers.health_facilities import HealthFacilitiesScraper
-from healthtools.scrapers.nhif_outpatient_cs_facilities import NhifOutpatientCsScraper
-from healthtools.scrapers.nhif_inpatient_facilities import NhifInpatientScraper
-from healthtools.scrapers.nhif_outpatient_facilities import NhifOutpatientScraper
+from healthtools.scrapers.nhif_outpatient_cs import NhifOutpatientCsScraper
+from healthtools.scrapers.nhif_inpatient import NhifInpatientScraper
+from healthtools.scrapers.nhif_outpatient import NhifOutpatientScraper
 
 if __name__ == "__main__":
 
@@ -13,17 +13,17 @@ if __name__ == "__main__":
     foreign_doctors_scraper = ForeignDoctorsScraper()
     clinical_officers_scraper = ClinicalOfficersScraper()
     healthfacilities_scraper = HealthFacilitiesScraper()
-    nhif_accredited_facilities = NhifOutpatientCsScraper()
-    nhif_accredited_inpatient = NhifInpatientScraper()
-    nhif_accredited_outpatient = NhifOutpatientScraper()
+    nhif_inpatient_scraper = NhifInpatientScraper()
+    nhif_outpatient_scraper = NhifOutpatientScraper()
+    nhif_outpatient_cs_scraper = NhifOutpatientCsScraper()
 
     # scraping you softly with these bots...
-    nhif_accredited_outpatient_result = nhif_accredited_outpatient.scrape_site()
-    nhif_accredited_inpatient_result = nhif_accredited_inpatient.scrape_site()
-    nhif_accredited_result = nhif_accredited_facilities.scrape_site()
     doctors_result = doctors_scraper.scrape_site()
     if doctors_result:
         foreign_doctors_scraper.document_id = len(doctors_result) + 1
         foreign_docs_result = foreign_doctors_scraper.scrape_site()
     clinical_officers_result = clinical_officers_scraper.scrape_site()
     healthfacilities_result = healthfacilities_scraper.scrape_data()
+    nhif_inpatient_result = nhif_inpatient_scraper.scrape_site()
+    nhif_outpatient_result = nhif_outpatient_scraper.scrape_site()
+    nhif_outpatient_cs_result = nhif_outpatient_cs_scraper.scrape_site()
