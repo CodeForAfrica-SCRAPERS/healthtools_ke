@@ -74,7 +74,8 @@ class Scraper(object):
                 self.retries = 0
                 scraped_page = self.scrape_page(url)
                 if scraped_page is None:
-                    scraped_page = self.scrape_page(url)
+                    print "There's something wrong with the site. Proceeding to the next scraper."
+                    return
 
                 all_results.extend(scraped_page)
             except Exception as err:
