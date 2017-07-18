@@ -14,7 +14,7 @@ if __name__ == "__main__":
     # scraping you softly with these bots...
     doctors_result = doctors_scraper.scrape_site()
     if doctors_result:
-        foreign_doctors_scraper.document_id = len(doctors_result) + 1
+        foreign_doctors_scraper.document_id = len(doctors_result)/ 2
         foreign_docs_result = foreign_doctors_scraper.scrape_site()
     clinical_officers_result = clinical_officers_scraper.scrape_site()
     healthfacilities_result = healthfacilities_scraper.scrape_data()
