@@ -23,6 +23,7 @@ class Scraper(object):
         self.site_url = None
         self.fields = None
         self.s3_key = None
+        self.doctor_type = None
         self.document_id = 0  # id for each entry, to be incremented
         self.s3_historical_record_key = None  # s3 historical_record key
         self.s3 = boto3.client("s3", **{
@@ -72,9 +73,8 @@ class Scraper(object):
             try:
                 self.retries = 0
                 scraped_page = self.scrape_page(url)
-                if type(scraped_page) != tuple:
-                    print "There's something wrong with the site. Proceeding to the next scraper."
-                    return
+                if scraped_page is None:
+                    scraped_page = self.scrape_page(url)
 
                 all_results.extend(scraped_page)
             except Exception as err:
@@ -86,8 +86,7 @@ class Scraper(object):
 
         if all_results:
             all_results_json = json.dumps(all_results)
-
-            self.delete_elasticsearch_docs()
+            self.delete_elasticsearch_docs(ES["index"])
             self.upload_data(all_results)
             self.archive_data(all_results_json)
 
@@ -179,7 +178,7 @@ class Scraper(object):
             self.print_error(
                 "ERROR - archive_data() - {} - {}".format(self.s3_key, str(err)))
 
-    def delete_elasticsearch_docs(self):
+    def delete_elasticsearch_docs(self, index):
         '''
         Delete documents that were uploaded to elasticsearch in the last scrape
         '''
@@ -191,15 +190,21 @@ class Scraper(object):
                 _type = "doctors"
             else:
                 _type = "health-facilities"
-
             # query to delete docs
             delete_query = {
                 "query": {
-                    "match_all": {}
+                    "match": {
+                        "doctor_type": self.doctor_type
+                    }
                 }
             }
+
+            if not self.doctor_type:
+              delete_query['query'] = { "match_all": {}}
+
             try:
-                self.es_client.delete_by_query(index=ES["index"], doc_type=_type, body=delete_query)
+                response = self.es_client.delete_by_query(index=index, doc_type=_type, body=delete_query)
+                return response
             except Exception as err:
                 self.print_error("ERROR - delete_elasticsearch_docs() - {} - {}".format(type(self).__name__, str(err)))
 
