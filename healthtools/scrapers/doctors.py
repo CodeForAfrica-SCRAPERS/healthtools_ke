@@ -18,7 +18,6 @@ class DoctorsScraper(Scraper):
 
         self.s3_key = "data/doctors.json"
         self.s3_historical_record_key = "data/archive/doctors-{}.json"
-        self.delete_file = "data/delete_doctors.json"
         self.doctor_type = "local_doctor"
 
     def format_for_elasticsearch(self, entry):

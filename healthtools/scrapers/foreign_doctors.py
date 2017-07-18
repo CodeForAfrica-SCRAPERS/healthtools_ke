@@ -16,7 +16,6 @@ class ForeignDoctorsScraper(Scraper):
             ]
         self.s3_key = "data/foreign_doctors.json"
         self.s3_historical_record_key = "data/archive/foreign_doctors-{}.json"
-        self.delete_file = "data/delete_foreign_doctors.json"
         self.doctor_type = "foreign_doctor"
 
     def format_for_elasticsearch(self, entry):

@@ -18,7 +18,6 @@ class ClinicalOfficersScraper(Scraper):
 
         self.s3_key = "data/clinical_officers.json"
         self.s3_historical_record_key = "data/archive/clinical_officers-{}.json"
-        self.delete_file = "data/delete_clinical_officers.json"
 
     def format_for_elasticsearch(self, entry):
         """
