@@ -70,7 +70,7 @@ class HealthFacilitiesScraper(Scraper):
                     self.payload.append(meta)
                     self.payload.append(elastic_data)
                     self.count = i
-            self.delete_elasticsearch_docs()  # delete elasticsearch data
+            self.delete_elasticsearch_docs(ES["index"])  # delete elasticsearch data
             self.upload(self.payload)  # upload data to elasticsearch
             print "{{{0}}} - Scraper completed. {1} records retrieved.".format(
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.count)
