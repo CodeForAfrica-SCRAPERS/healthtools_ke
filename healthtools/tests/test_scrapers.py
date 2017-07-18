@@ -22,17 +22,17 @@ class TestDoctorsScraper(unittest.TestCase):
 
     def test_it_scrapes_doctors_page(self):
         entries = self.doctors_scraper.scrape_page(
-            "http://medicalboard.co.ke/online-services/retention/?currpage=1")[0]
+            "http://medicalboard.co.ke/online-services/retention/?currpage=1")
         self.assertTrue(len(entries) == 60)
 
     def test_it_scrapes_foreign_doctors_page(self):
         entries = self.foreign_doctors_scraper.scrape_page(
-            "http://medicalboard.co.ke/online-services/foreign-doctors-license-register/?currpage=1")[0]
+            "http://medicalboard.co.ke/online-services/foreign-doctors-license-register/?currpage=1")
         self.assertTrue(len(entries) == 60)
 
     def test_it_scrapes_clinical_officers_page(self):
         entries = self.clinical_officers_scraper.scrape_page(
-            "http://clinicalofficerscouncil.org/online-services/retention/?currpage=1")[0]
+            "http://clinicalofficerscouncil.org/online-services/retention/?currpage=1")
         self.assertTrue(len(entries) == 60)
 
     def test_doctors_scraper_uploads_to_elasticsearch(self):
@@ -102,3 +102,31 @@ class TestDoctorsScraper(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
         else:
             self.assertIsNone(response)
+
+    def test_delete_doctors_documents_from_elasticsearch(self):
+        with open(TEST_DIR + "/dummy_files/doctors.json", "r") as my_file:
+            data = my_file.read()
+        upload_response  = self.doctors_scraper.upload_data(json.loads(data))
+        delete_response = self.doctors_scraper.delete_elasticsearch_docs('healthtools')
+        self.assertEqual(len(upload_response["items"]), delete_response["deleted"])
+
+    def test_delete_foreign_doctors_documents_from_elasticsearch(self):
+        with open(TEST_DIR + "/dummy_files/foreign_doctors.json", "r") as my_file:
+            data = my_file.read()
+        upload_response  = self.foreign_doctors_scraper.upload_data(json.loads(data))
+        delete_response = self.foreign_doctors_scraper.delete_elasticsearch_docs('healthtools')
+        self.assertEqual(len(upload_response["items"]), delete_response["deleted"])
+
+    def test_delete_clinical_officers_documents_from_elasticsearch(self):
+        with open(TEST_DIR + "/dummy_files/clinical_officers.json", "r") as my_file:
+            data = my_file.read()
+        upload_response  = self.clinical_officers_scraper.upload_data(json.loads(data))
+        delete_response = self.clinical_officers_scraper.delete_elasticsearch_docs('healthtools')
+        self.assertEqual(len(upload_response["items"]), delete_response["deleted"])
+
+    def test_delete_health_facilities_documents_from_elasticsearch(self):
+        with open(TEST_DIR + "/dummy_files/health_facilities.json", "r") as my_file:
+            data = my_file.read()
+        upload_response  = self.health_facilities_scraper.upload(json.loads(data))
+        delete_response = self.health_facilities_scraper.delete_elasticsearch_docs('healthtools')
+        self.assertEqual(len(upload_response["items"]), delete_response["deleted"])
