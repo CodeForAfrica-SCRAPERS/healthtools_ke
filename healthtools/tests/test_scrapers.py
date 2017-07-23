@@ -5,16 +5,22 @@ from healthtools.scrapers.doctors import DoctorsScraper
 from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
 from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
 from healthtools.scrapers.health_facilities import HealthFacilitiesScraper
+from healthtools.scrapers.nhif_inpatient import NhifInpatientScraper
+from healthtools.scrapers.nhif_outpatient import NhifOutpatientScraper
+from healthtools.scrapers.nhif_outpatient_cs import NhifOutpatientCsScraper
 from healthtools.config import TEST_DIR, SLACK, AWS
 
 
-class TestDoctorsScraper(unittest.TestCase):
+class TestScrapers(unittest.TestCase):
     def setUp(self):
         self.base_scraper = Scraper()
         self.doctors_scraper = DoctorsScraper()
         self.foreign_doctors_scraper = ForeignDoctorsScraper()
         self.clinical_officers_scraper = ClinicalOfficersScraper()
         self.health_facilities_scraper = HealthFacilitiesScraper()
+        self.nhif_inpatient_scraper = NhifInpatientScraper()
+        self.nhif_outpatient_scraper = NhifOutpatientScraper()
+        self.nhif_outpatient_cs_scraper = NhifOutpatientCsScraper()
 
     def test_it_gets_the_total_number_of_pages(self):
         self.doctors_scraper.get_total_number_of_pages()
@@ -34,6 +40,18 @@ class TestDoctorsScraper(unittest.TestCase):
         entries = self.clinical_officers_scraper.scrape_page(
             "http://clinicalofficerscouncil.org/online-services/retention/?currpage=1")[0]
         self.assertTrue(len(entries) == 60)
+
+    def test_it_scrapes_nhif_inpatient_page(self):
+        entries = self.nhif_inpatient_scraper.scrape_page(1)
+        self.assertTrue(len(entries) > 1)
+
+    def test_it_scrapes_nhif_outpatient_page(self):
+        entries = self.nhif_outpatient_scraper.scrape_page(1)
+        self.assertTrue(len(entries) > 1)
+
+    def test_it_scrapes_nhif_outpatient_cs_page(self):
+        entries = self.nhif_outpatient_cs_scraper.scrape_page(1)
+        self.assertTrue(len(entries) > 1)
 
     def test_doctors_scraper_uploads_to_elasticsearch(self):
         with open(TEST_DIR + "/dummy_files/doctors.json", "r") as my_file:
@@ -57,6 +75,24 @@ class TestDoctorsScraper(unittest.TestCase):
         with open(TEST_DIR + "/dummy_files/health_facilities.json", "r") as my_file:
             data = my_file.read()
             response = self.health_facilities_scraper.upload(json.loads(data))
+            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
+
+    def test_nhif_inpatient_scraper_uploads_to_elasticsearch(self):
+        with open(TEST_DIR + "/dummy_files/nhif_inpatient.json", "r") as my_file:
+            data = my_file.read()
+            response = self.nhif_inpatient_scraper.upload_data(json.loads(data))
+            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
+
+    def test_nhif_outpatient_scraper_uploads_to_elasticsearch(self):
+        with open(TEST_DIR + "/dummy_files/nhif_outpatient.json", "r") as my_file:
+            data = my_file.read()
+            response = self.nhif_outpatient_scraper.upload_data(json.loads(data))
+            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
+
+    def test_nhif_outpatient_cs_scraper_uploads_to_elasticsearch(self):
+        with open(TEST_DIR + "/dummy_files/nhif_outpatient_cs.json", "r") as my_file:
+            data = my_file.read()
+            response = self.nhif_outpatient_cs_scraper.upload_data(json.loads(data))
             self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
 
     def test_doctors_scraper_archives_to_s3(self):
