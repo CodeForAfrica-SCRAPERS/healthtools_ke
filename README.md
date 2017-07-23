@@ -63,7 +63,7 @@ Set the `SMALL_BATCH`, `SMALL_BATCH_HF` (for health facilities scrapers), and `S
 Use `$ python scraper.py small_batch` to run the scrapers.
 
 
-## Running the tests
+## Tests
 
 Use nosetests to run tests (with stdout) like this:
 ```$ nosetests --nocapture```
