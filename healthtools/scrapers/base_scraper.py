@@ -23,6 +23,7 @@ class Scraper(object):
         self.site_url = None
         self.fields = None
         self.s3_key = None
+        self.doctor_type = None
         self.document_id = 0  # id for each entry, to be incremented
         self.delete_file = None  # contains docs to be deleted after scrape
         self._type = None  # elastic search for type
@@ -68,7 +69,6 @@ class Scraper(object):
         print "[{0}] Started Scraper.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         all_results = []
-        delete_batch = []
         skipped_pages = 0
 
         self.get_total_number_of_pages()
@@ -76,6 +76,7 @@ class Scraper(object):
             url = self.site_url.format(page_num)
             try:
                 self.retries = 0
+<<<<<<< HEAD
                 nhif = set(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower().split()) &\
                     set(self.NHIF_SERVICES)
                 if nhif:
@@ -83,13 +84,14 @@ class Scraper(object):
                 else:
                     scraped_page = self.scrape_page(url)
                 if type(scraped_page) != tuple:
+=======
+                scraped_page = self.scrape_page(url)
+                if scraped_page is None:
+>>>>>>> pr/24
                     print "There's something wrong with the site. Proceeding to the next scraper."
                     return
 
-                entries, delete_docs = scraped_page
-
-                all_results.extend(entries)
-                delete_batch.extend(delete_docs)
+                all_results.extend(scraped_page)
             except Exception as err:
                 skipped_pages += 1
                 self.print_error("ERROR - scrape_site() - source: {} page: {} - {}".format(url, page_num, err))
@@ -99,21 +101,10 @@ class Scraper(object):
 
         if all_results:
             all_results_json = json.dumps(all_results)
-            delete_batch = json.dumps(delete_batch)
-
-            self.delete_elasticsearch_docs()
+            self.delete_elasticsearch_docs(ES["index"])
             self.upload_data(all_results)
             self.archive_data(all_results_json)
 
-            # store delete operations for next scrape
-            if AWS["s3_bucket"]:
-                delete_file = StringIO(delete_batch)
-                self.s3.upload_fileobj(
-                    delete_file, AWS["s3_bucket"],
-                    self.delete_file)
-            else:
-                with open(self.delete_file, "w") as delete:
-                    json.dump(delete_batch, delete)
             print "[{0}] - Completed Scraper.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
             return all_results
@@ -128,7 +119,6 @@ class Scraper(object):
             rows = table.find_all("tr")
 
             entries = []
-            delete_batch = []
             for row in rows:
                 # only the columns we want
                 # -1 because fields/columns has extra index; id
@@ -141,6 +131,7 @@ class Scraper(object):
                 entries.append(meta)
                 entries.append(entry)
 
+<<<<<<< HEAD
                 delete_batch.append({
                     "delete": {
                         "_index": ES["index"],
@@ -148,8 +139,10 @@ class Scraper(object):
                         "_id": entry["id"]
                     }
                 })
+=======
+>>>>>>> pr/24
                 self.document_id += 1
-            return entries, delete_batch
+            return entries
         except Exception as err:
             if self.retries >= 5:
                 self.print_error("ERROR - Failed to scrape data from page - {} - {}".format(page_url, str(err)))
@@ -207,13 +200,15 @@ class Scraper(object):
                 print "[{0}] - Archived data has been updated.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         except Exception as err:
-            self.print_error("ERROR - archive_data() - {} - {}".format(self.s3_key, str(err)))
+            self.print_error(
+                "ERROR - archive_data() - {} - {}".format(self.s3_key, str(err)))
 
-    def delete_elasticsearch_docs(self):
+    def delete_elasticsearch_docs(self, index):
         '''
         Delete documents that were uploaded to elasticsearch in the last scrape
         '''
         try:
+<<<<<<< HEAD
             # get documents to be deleted
             if AWS["s3_bucket"]:
                 delete_docs = self.s3.get_object(
@@ -251,10 +246,34 @@ class Scraper(object):
                         })
                 response = self.es_client.bulk(index=ES["index"], body=delete_records)
             return response
+=======
+            # get the type to use with the index depending on the calling method
+            if "clinical" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
+                _type = "clinical-officers"
+            elif "doctors" in re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower():
+                _type = "doctors"
+            else:
+                _type = "health-facilities"
+            # query to delete docs
+            delete_query = {
+                "query": {
+                    "match": {
+                        "doctor_type": self.doctor_type
+                    }
+                }
+            }
+
+            if not self.doctor_type:
+              delete_query['query'] = { "match_all": {}}
+
+            try:
+                response = self.es_client.delete_by_query(index=index, doc_type=_type, body=delete_query)
+                return response
+            except Exception as err:
+                self.print_error("ERROR - delete_elasticsearch_docs() - {} - {}".format(type(self).__name__, str(err)))
+
+>>>>>>> pr/24
         except Exception as err:
-            if "NoSuchKey" in err:
-                self.print_error("ERROR - delete_elasticsearch_docs() -- no delete file present")
-                return
             self.print_error("ERROR - delete_elasticsearch_docs() - {} - {}".format(type(self).__name__, str(err)))
 
     def get_total_number_of_pages(self):

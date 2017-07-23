@@ -28,9 +28,7 @@ class HealthFacilitiesScraper(Scraper):
         self._type = "health-facilities"
         self.s3_key = "data/health_facilities.json"
         self.s3_historical_record_key = "data/archive/health_facilities-{}.json"
-        self.delete_file = "data/delete_health_facilities.json"
         self.payload = []
-        self.delete_data = []
         self.count = 0
 
     def get_token(self):
@@ -64,7 +62,6 @@ class HealthFacilitiesScraper(Scraper):
                         meta, elastic_data = self.index_for_elasticsearch(record)
                         self.payload.append(meta)
                         self.payload.append(elastic_data)
-                        self.delete_data.append(self.delete_payload(record))
                     else:
                         self.count = i
                         break
@@ -73,25 +70,14 @@ class HealthFacilitiesScraper(Scraper):
                     meta, elastic_data = self.index_for_elasticsearch(record)
                     self.payload.append(meta)
                     self.payload.append(elastic_data)
-                    self.delete_data.append(self.delete_payload(record))
                     self.count = i
-            self.delete_elasticsearch_docs()  # delete elasticsearch data
+            self.delete_elasticsearch_docs(ES["index"])  # delete elasticsearch data
             self.upload(self.payload)  # upload data to elasticsearch
             print "{{{0}}} - Scraper completed. {1} records retrieved.".format(
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.count)
             # save the data
             self.archive_data(json.dumps(self.payload))
 
-            if AWS["s3_bucket"]:
-                # Push the delete payload to s3
-                delete_file = StringIO(json.dumps(self.delete_data))
-                self.s3.upload_fileobj(
-                    delete_file, AWS["s3_bucket"],
-                    self.delete_file)
-            else:
-                # push payload to local file storage
-                with open(self.delete_file, "w") as delete:
-                    json.dump(self.delete_data, delete)
             print "{{{0}}} - Completed Scraper.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         except Exception as err:
@@ -123,9 +109,6 @@ class HealthFacilitiesScraper(Scraper):
             "ward_name": record["ward_name"].decode("string_escape").replace("\\", "")
             }
         return meta_data, health_facilities
-
-    def delete_payload(self, record):
-        return {"delete": {"_index": ES["index"], "_type": self._type, "_id": record["code"]}}
 
     def scrape_data(self):
         self.get_token()
