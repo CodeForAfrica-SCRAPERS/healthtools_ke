@@ -1,19 +1,19 @@
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import SITES, ES, SMALL_BATCH_NHIF
+from healthtools.config import SITES, SMALL_BATCH_NHIF
+import time
 
 
 class NhifInpatientScraper(Scraper):
     """Scraper for the NHIF accredited inpatient facilities"""
     def __init__(self):
         super(NhifInpatientScraper, self).__init__()
-        self.site_url = SITES["NHIF-INPATIENT"]
+        self.site_url = SITES["NHIF_INPATIENT"]
         self.fields = ["hospital", "postal_addr", "beds", "branch", "category", "id"]
-        self._type = "nhif-inpatient"
-        self.s3_key = "data/nhif_inpatient.json"
-        self.s3_historical_record_key = "data/archive/nhif_inpatient-{}.json"
-        self.delete_file = "data/delete_nhif_inpatient.json"
+        self.es_doc = "nhif-inpatient"
+        self.data_key = "nhif_inpatient.json"
+        self.data_archive_key = "archive/nhif_inpatient-{}.json"
 
-    def scrape_page(self, tab_num):
+    def scrape_page(self, tab_num, page_retries):
         """
         Get entries from each tab panel
         :param tab_num: the
@@ -22,9 +22,11 @@ class NhifInpatientScraper(Scraper):
         try:
             soup = self.make_soup(self.site_url)
             regions = soup.findAll("a", {"data-toggle": "tab"})
-            tabs = [(region["href"].split("#")[1], region.getText()) for region in regions]
-            entries = []
-            delete_batch = []
+            tabs = [(region["href"].split("#")[1], str(region.getText())) for region in regions]
+
+            results = []
+            results_es = []
+
             for tab in tabs:
                 table = soup.find("div", {"id": tab[0]}).tbody
                 if self.small_batch:
@@ -33,45 +35,43 @@ class NhifInpatientScraper(Scraper):
                     rows = table.find_all("tr")
                 for row in rows:
                     columns = row.find_all("td")
-                    columns = [text.text.strip() for text in columns]
-                    columns.append(self.document_id)
+                    columns = [str(text.get_text()) for text in columns]
+                    columns.append(self.doc_id)
 
                     entry = dict(zip(self.fields, columns))
-                    # nairobi region isn't included correctly
+
+                    # Nairobi region isn't included correctly
                     if tab[1] == "":
                         entry["region"] = "Nairobi Region"
                     else:
                         entry["region"] = tab[1]
-                    meta, entry = self.format_for_elasticsearch(entry)
-                    entries.append(meta)
-                    entries.append(entry)
 
-                    delete_batch.append({
-                        "delete": {
-                            "_index": ES["index"],
-                            "_type": self._type,
-                            "_id": entry["id"]
-                        }
-                    })
-                    self.document_id += 1
-            return entries, delete_batch
+                    meta, entry = self.elasticsearch_format(entry)
+                    results_es.append(meta)
+                    results_es.append(entry)
+                    results.append(entry)
+                    self.doc_id += 1
+            return results, results_es
         except Exception as err:
-            if self.retries >= 5:
-                self.print_error("ERROR - Failed to scrape data from tab - {} - {}".format(tab_num, str(err)))
+            if page_retries >= 5:
+                self.print_error("ERROR: Failed to scrape data from page. \nurl: {} \nerr: {}".format(tab_num, str(err)))
                 return err
             else:
-                self.retries += 1
-                self.scrape_page(tab_num)
+                page_retries += 1
+                print("Try {}/5 has failed... \n{} \nGoing to sleep for {} seconds.".
+                      format(page_retries, err, page_retries*5))
+                time.sleep(page_retries*5)
+                self.scrape_page(tab_num, page_retries)
 
-    def get_total_number_of_pages(self):
+    def set_site_pages_no(self):
         """
         Get the total number of pages
         """
         try:
             soup = self.make_soup(self.site_url)
             # get number of tabs to scrape
-            self.num_pages_to_scrape = len(
+            self.site_pages_no = len(
                 [tag.name for tag in soup.find("div", {"class": "tab-content"}) if tag.name == 'div'])
         except Exception as err:
-            self.print_error("ERROR - get_total_page_numbers() - url: {} - err: {}".format(self.site_url, str(err)))
+            self.print_error("ERROR: set_site_pages_no() \nurl: {} \nerr: {}".format(self.site_url, str(err)))
             return

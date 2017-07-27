@@ -14,13 +14,13 @@ class ClinicalOfficersScraper(Scraper):
         self.fields = [
             "name", "reg_date", "reg_no", "valid_dates",
             "address", "qualifications", "id",
-            ]
+        ]
 
-        self._type = "clinical-officers"
-        self.s3_key = "data/clinical_officers.json"
-        self.s3_historical_record_key = "data/archive/clinical_officers-{}.json"
+        self.es_doc = "clinical-officers"
+        self.data_key = "clinical_officers.json"
+        self.data_archive_key = "archive/clinical_officers-{}.json"
 
-    def format_for_elasticsearch(self, entry):
+    def elasticsearch_format(self, entry):
         """
         Format entry into elasticsearch ready document
         :param entry: the data to be formatted
@@ -36,8 +36,8 @@ class ClinicalOfficersScraper(Scraper):
         meta_dict = {
             "index": {
                 "_index": ES["index"],
-                "_type": self._type,
+                "_type": self.es_doc,
                 "_id": entry["id"]
-                }
             }
+        }
         return meta_dict, entry

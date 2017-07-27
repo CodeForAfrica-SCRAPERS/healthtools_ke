@@ -1,5 +1,5 @@
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import SITES, ES
+from healthtools.config import ES, DATA_DIR, SITES
 from datetime import datetime
 
 
@@ -15,11 +15,10 @@ class DoctorsScraper(Scraper):
             "name", "reg_date", "reg_no", "postal_address", "qualifications",
             "speciality", "sub_speciality", "id",
         ]
-
-        self._type = "doctors"
-        self.s3_key = "data/doctors.json"
-        self.s3_historical_record_key = "data/archive/doctors-{}.json"
-        self.doctor_type = "local_doctor"
+        
+        self.es_doc = "doctors"
+        self.data_key = "doctors.json"
+        self.data_archive_key = "archive/doctors-{}.json"
 
     def format_for_elasticsearch(self, entry):
         """
@@ -39,7 +38,7 @@ class DoctorsScraper(Scraper):
         meta_dict = {
             "index": {
                 "_index": ES["index"],
-                "_type": self._type,
+                "_type": self.es_doc,
                 "_id": entry["id"]
             }
         }

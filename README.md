@@ -56,7 +56,30 @@ For linux and windows users, follow instructions from this [link](https://www.el
 
 For mac users, run `$ brew install elasticsearch` on your terminal.
 
-#### Slack
+#### Error Handling
+
+As with anything beyond our control (the websites we are scraping), we try to catch all errors and display useful and actionable information about them.
+
+As such, we capture the following details:
+
+- Timestamp
+- Machine name
+- Module / Scraper name + function name
+- Error message
+
+This data is printed in terminal in the following way:
+
+```
+[ Timestamp ] { Module / Scraper Name }
+[ Timestamp ] Scraper has started.
+[ Timestamp ] ERROR: { Module / Scraper Name } / { function name }
+[ Timestamp ] ERROR: { Error message }
+
+```
+
+We also provide a Slack notification option detailed below.
+
+*Slack Notification:*
 
 We use Slack notifications when the scrapers run into an error.
 
@@ -65,6 +88,7 @@ Set up Incoming Webhooks [here](https://slack.com/signin?redir=%2Fservices%2Fnew
 If you set up elasticsearch locally run it `$ elasticsearch`
 
 You can now run the scrapers `$ python scraper.py` (It might take a while)
+
 
 ### Development
 

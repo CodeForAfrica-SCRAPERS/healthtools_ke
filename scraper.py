@@ -18,6 +18,8 @@ if __name__ == "__main__":
     nhif_outpatient_scraper = NhifOutpatientScraper()
     nhif_outpatient_cs_scraper = NhifOutpatientCsScraper()
 
+    healthfacilities_result = healthfacilities_scraper.run_scraper()
+
     # Run the scrapers
 
     '''
@@ -26,30 +28,31 @@ if __name__ == "__main__":
     Doctors are a combination of local and foreign doctors. If the local
     doctors' scraper fails, we shouldn't scrape the foreign doctors.
     '''
-    doctors_result = doctors_scraper.scrape_site()
+
+    doctors_result = doctors_scraper.run_scraper()
     if doctors_result:
-        foreign_doctors_scraper.document_id = len(doctors_result)
-        foreign_docs_result = foreign_doctors_scraper.scrape_site()
+        foreign_doctors_scraper.doc_id = len(doctors_result)
+        foreign_docs_result = foreign_doctors_scraper.run_scraper()
 
     '''
     Clinical Officers Scraper
     -------------------------
     Scrapes the clinical officers website.
     '''
-    clinical_officers_result = clinical_officers_scraper.scrape_site()
+    clinical_officers_result = clinical_officers_scraper.run_scraper()
 
     '''
     Health Facilities Scraper
     -------------------------
     Scrapes the government's Kenya Health Facilities Master List.
     '''
-    healthfacilities_result = healthfacilities_scraper.scrape_data()
+    healthfacilities_result = healthfacilities_scraper.run_scraper()
 
     '''
     NHIF Scraper
     -------------------------
     Scrapes the NHIF website for accredited hospital / facitilities.
     '''
-    nhif_inpatient_result = nhif_inpatient_scraper.scrape_site()
-    nhif_outpatient_result = nhif_outpatient_scraper.scrape_site()
-    nhif_outpatient_cs_result = nhif_outpatient_cs_scraper.scrape_site()
+    nhif_inpatient_result = nhif_inpatient_scraper.run_scraper()
+    nhif_outpatient_result = nhif_outpatient_scraper.run_scraper()
+    nhif_outpatient_cs_result = nhif_outpatient_cs_scraper.run_scraper()
