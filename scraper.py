@@ -18,8 +18,6 @@ if __name__ == "__main__":
     nhif_outpatient_scraper = NhifOutpatientScraper()
     nhif_outpatient_cs_scraper = NhifOutpatientCsScraper()
 
-    healthfacilities_result = healthfacilities_scraper.run_scraper()
-
     # Run the scrapers
 
     '''
