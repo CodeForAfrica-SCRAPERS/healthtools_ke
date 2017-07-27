@@ -13,10 +13,11 @@ class ForeignDoctorsScraper(Scraper):
         self.fields = [
             "name", "reg_no", "postal_address", "qualifications",
             "facility", "practice_type", "id"
-            ]
-        self.s3_key = "data/foreign_doctors.json"
-        self.s3_historical_record_key = "data/archive/foreign_doctors-{}.json"
-        self.delete_file = "data/delete_foreign_doctors.json"
+        ]
+
+        self.es_doc = "doctors"
+        self.data_key = "foreign_doctors.json"
+        self.data_archive_key = "archive/foreign_doctors-{}.json"
 
     def format_for_elasticsearch(self, entry):
         """
@@ -26,12 +27,14 @@ class ForeignDoctorsScraper(Scraper):
         """
         entry["reg_date"] = "0000-01-01T00:00:00.000Z"
         entry["reg_no"] = entry["speciality"] = entry["sub_speciality"] = "-"
+        entry["doctor_type"] = "foreign_doctor"
+
         # all bulk data need meta data describing the data
         meta_dict = {
             "index": {
                 "_index": ES["index"],
-                "_type": "doctors",
+                "_type": self.es_doc,
                 "_id": entry["id"]
-                }
             }
+        }
         return meta_dict, entry
