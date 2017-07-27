@@ -23,14 +23,15 @@ SMALL_BATCH_HF = 100  # No of records scraped from health-facilities sites in de
 SMALL_BATCH_NHIF = 1  # No of nhif accredited facilities scraped in development mode
 
 # Where we archive the data
-DATA_DIR = "data/"
+DATA_DIR = os.getcwd() + "/data/"
 TEST_DIR = DATA_DIR + "tests/"
-if not AWS["s3_bucket"] and not os.path.exists(DATA_DIR):
-    DATA_DIR = os.getcwd() + "/data/"
-    TEST_DIR = DATA_DIR + "tests/"
+if not os.path.exists(DATA_DIR):
     os.mkdir(DATA_DIR)
     os.mkdir(DATA_DIR + "archive")
-    os.mkdir(DATA_DIR + "test")
+    os.mkdir(TEST_DIR)
+
+if AWS["s3_bucket"]:
+    DATA_DIR = "data/"
 
 # sites to be scraped
 SITES = {
