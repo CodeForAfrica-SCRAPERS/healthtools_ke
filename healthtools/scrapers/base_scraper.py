@@ -261,7 +261,7 @@ class Scraper(object):
 
         except Exception as err:
             self.print_error(
-                "ERROR: archive_data() - {} - {}".format(self.s3_key, str(err)))
+                "ERROR: archive_data() - {} - {}".format(self.data_key, str(err)))
 
     def print_error(self, message):
         '''
