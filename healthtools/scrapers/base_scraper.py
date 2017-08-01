@@ -3,15 +3,14 @@ from cStringIO import StringIO
 from datetime import datetime
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
-from serializer import JSONSerializerPython2
-from healthtools.config import AWS, ES, SLACK, DATA_DIR, SITES, SMALL_BATCH, NHIF_SERVICES
+from json_serializer import JSONSerializerPython2
+from healthtools.config import AWS, ES, SLACK, DATA_DIR, SMALL_BATCH, NHIF_SERVICES, TEST_DIR
 import requests
 import boto3
 import re
 import json
 import hashlib
 import sys
-import os
 import getpass
 import time
 
@@ -200,7 +199,7 @@ class Scraper(object):
         '''
         try:
             # bulk index the data and use refresh to ensure that our data will be immediately available
-            response = self.es_client.bulk(index=ES["index"], body=self.results_es, refresh=True)
+            response = self.es_client.bulk(index=ES["index"], body=results, refresh=True)
             print("[{0}] Elasticsearch: Index successful.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             return response
         except Exception as err:
@@ -213,7 +212,8 @@ class Scraper(object):
         try:
             delete_query = {"query": {"match_all": {}}}
             try:
-                response = self.es_client.delete_by_query(index=ES["index"], doc_type=self.es_doc, body=delete_query)
+                import pdb; pdb.set_trace()
+                response = self.es_client.delete_by_query(index=ES["index"], doc_type=self.es_doc, body=delete_query, _source=True)
                 return response
             except Exception as err:
                 self.print_error("ERROR: elasticsearch_delete_docs() - {} - {}".format(type(self).__name__, str(err)))
@@ -261,7 +261,7 @@ class Scraper(object):
 
         except Exception as err:
             self.print_error(
-                "ERROR: archive_data() - {} - {}".format(self.s3_key, str(err)))
+                "ERROR: archive_data() - {} - {}".format(self.data_key, str(err)))
 
     def print_error(self, message):
         '''
@@ -273,21 +273,21 @@ class Scraper(object):
         if SLACK["url"]:
             errors = message.split("-", 3)
             try:
-                severity = errors[3].split(":")[1]
+                severity = errors[2].split(":")[1]
             except:
-                severity = errors[3]
+                severity = errors[1]
             response = requests.post(
                 SLACK["url"],
                 data=json.dumps({
                     "attachments":[
                         {
-                            "author_name": "{}".format(errors[2]),
+                            "author_name": "{}".format(errors[1]),
                             "color": "danger",
-                            "pretext": "[SCRAPER] New Alert for{}:{}".format(errors[2], errors[1]),
+                            "pretext": "[SCRAPER] New Alert for{}:{}".format(errors[1], errors[0]),
                             "fields": [
                                 {
                                     "title": "Message",
-                                    "value": "{}".format(errors[3]),
+                                    "value": "{}".format(errors[2]),
                                     "short": False
                                     },
                                 {
