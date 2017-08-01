@@ -212,7 +212,6 @@ class Scraper(object):
         try:
             delete_query = {"query": {"match_all": {}}}
             try:
-                import pdb; pdb.set_trace()
                 response = self.es_client.delete_by_query(index=ES["index"], doc_type=self.es_doc, body=delete_query, _source=True)
                 return response
             except Exception as err:
