@@ -24,11 +24,11 @@ SMALL_BATCH_NHIF = 1  # No of nhif accredited facilities scraped in development 
 
 # Where we archive the data
 DATA_DIR = os.getcwd() + "/data/"
-TEST_DIR = os.getcwd() + "/healthtools/tests/"
 if not os.path.exists(DATA_DIR):
     os.mkdir(DATA_DIR)
     os.mkdir(DATA_DIR + "archive")
-    os.mkdir(TEST_DIR)
+    os.mkdir(DATA_DIR + "test")
+    os.mkdir(DATA_DIR + "test/archive")
 
 if AWS["s3_bucket"]:
     DATA_DIR = "data/"
