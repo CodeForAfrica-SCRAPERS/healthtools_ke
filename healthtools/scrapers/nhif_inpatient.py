@@ -1,5 +1,5 @@
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import SITES, SMALL_BATCH_NHIF
+from healthtools.config import ES, SITES, SMALL_BATCH_NHIF
 import time
 
 
@@ -9,6 +9,7 @@ class NhifInpatientScraper(Scraper):
         super(NhifInpatientScraper, self).__init__()
         self.site_url = SITES["NHIF_INPATIENT"]
         self.fields = ["hospital", "postal_addr", "beds", "branch", "category", "id"]
+        self.es_index = ES["index"]
         self.es_doc = "nhif-inpatient"
         self.data_key = "nhif_inpatient.json"
         self.data_archive_key = "archive/nhif_inpatient-{}.json"
@@ -16,7 +17,8 @@ class NhifInpatientScraper(Scraper):
     def scrape_page(self, tab_num, page_retries):
         """
         Get entries from each tab panel
-        :param tab_num: the
+        :param tab_num: the tab number
+        :page_retries: Number of times to retry
         :return: tuple consisting of entries and records to be deleted
         """
         try:
