@@ -1,5 +1,5 @@
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import SITES, SMALL_BATCH_NHIF
+from healthtools.config import ES, SITES, SMALL_BATCH_NHIF
 
 
 class NhifOutpatientScraper(Scraper):
@@ -10,6 +10,7 @@ class NhifOutpatientScraper(Scraper):
         super(NhifOutpatientScraper, self).__init__()
         self.site_url = SITES["NHIF_OUTPATIENT"]
         self.fields = ["code", "hospital", "nhif_branch", "id"]
+        self.es_index = ES["index"]
         self.es_doc = "nhif-outpatient"
         self.data_key = "nhif_outpatient.json"
         self.data_archive_key = "nhif_outpatient-{}.json"

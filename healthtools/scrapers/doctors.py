@@ -15,7 +15,7 @@ class DoctorsScraper(Scraper):
             "name", "reg_date", "reg_no", "postal_address", "qualifications",
             "speciality", "sub_speciality", "id",
         ]
-        
+        self.es_index = ES["index"]
         self.es_doc = "doctors"
         self.data_key = "doctors.json"
         self.data_archive_key = "archive/doctors-{}.json"
@@ -37,7 +37,7 @@ class DoctorsScraper(Scraper):
         # all bulk data need meta data describing the data
         meta_dict = {
             "index": {
-                "_index": ES["index"],
+                "_index": self.es_index,
                 "_type": self.es_doc,
                 "_id": entry["id"]
             }

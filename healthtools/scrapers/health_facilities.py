@@ -24,6 +24,7 @@ SEARCH_URL = "http://api.kmhfl.health.go.ke/api/facilities/material/?page_size={
 class HealthFacilitiesScraper(Scraper):
     def __init__(self):
         super(HealthFacilitiesScraper, self).__init__()
+        self.es_index = ES["index"]
         self.es_doc = "health-facilities"
         self.data_key = "health_facilities.json"
         self.data_archive_key = "archive/health_facilities-{}.json"
@@ -81,7 +82,7 @@ class HealthFacilitiesScraper(Scraper):
     def elasticsearch_format(self, entry):
         meta_dict = {
             "index": {
-                "_index": ES["index"],
+                "_index": self.es_index,
                 "_type": self.es_doc,
                 "_id": self.doc_id
             }
