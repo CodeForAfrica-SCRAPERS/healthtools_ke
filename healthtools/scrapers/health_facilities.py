@@ -1,7 +1,6 @@
 import json
-from cStringIO import StringIO
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import ES, SMALL_BATCH_HF, AWS
+from healthtools.config import ES, SMALL_BATCH_HF
 import requests
 from datetime import datetime
 
@@ -81,7 +80,7 @@ class HealthFacilitiesScraper(Scraper):
     def elasticsearch_format(self, entry):
         meta_dict = {
             "index": {
-                "_index": ES["index"],
+                "_index": self.es_index,
                 "_type": self.es_doc,
                 "_id": self.doc_id
             }
