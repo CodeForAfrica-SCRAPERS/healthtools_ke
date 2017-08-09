@@ -1,6 +1,7 @@
-from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import SITES, SMALL_BATCH_NHIF
 import time
+
+from healthtools.scrapers.base_scraper import Scraper
+from healthtools.config import ES, SITES, SMALL_BATCH_NHIF
 
 
 class NhifInpatientScraper(Scraper):
@@ -16,7 +17,8 @@ class NhifInpatientScraper(Scraper):
     def scrape_page(self, tab_num, page_retries):
         """
         Get entries from each tab panel
-        :param tab_num: the
+        :param tab_num: the tab number
+        :page_retries: Number of times to retry
         :return: tuple consisting of entries and records to be deleted
         """
         try:
