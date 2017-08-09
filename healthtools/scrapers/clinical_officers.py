@@ -15,7 +15,6 @@ class ClinicalOfficersScraper(Scraper):
             "name", "reg_date", "reg_no", "valid_dates",
             "address", "qualifications", "id",
         ]
-
         self.es_doc = "clinical-officers"
         self.data_key = "clinical_officers.json"
         self.data_archive_key = "archive/clinical_officers-{}.json"
@@ -35,7 +34,7 @@ class ClinicalOfficersScraper(Scraper):
         # all bulk data need meta data describing the data
         meta_dict = {
             "index": {
-                "_index": ES["index"],
+                "_index": self.es_index,
                 "_type": self.es_doc,
                 "_id": entry["id"]
             }
