@@ -15,7 +15,6 @@ class ClinicalOfficersScraper(Scraper):
             "name", "reg_date", "reg_no", "valid_dates",
             "address", "qualifications", "id",
         ]
-        self.es_index = ES["index"]
         self.es_doc = "clinical-officers"
         self.data_key = "clinical_officers.json"
         self.data_archive_key = "archive/clinical_officers-{}.json"

@@ -30,7 +30,7 @@ class Scraper(object):
         self.fields = None
 
         self.doc_id = 1  # Id for each entry, to be incremented
-        self.es_index = None  # Elasticsearch index
+        self.es_index = ES["index"]  # Elasticsearch index
         self.es_doc = None  # Elasticsearch doc_type
 
         self.s3 = boto3.client("s3", **{
@@ -231,6 +231,8 @@ class Scraper(object):
         '''
         try:
             date = datetime.today().strftime("%Y%m%d")
+            self.data_key = DATA_DIR + self.data_key
+            self.data_archive_key = DATA_DIR + self.data_archive_key
             if AWS["s3_bucket"]:
                 old_etag = self.s3.get_object(
                     Bucket=AWS["s3_bucket"], Key=self.data_key)["ETag"]
@@ -250,9 +252,6 @@ class Scraper(object):
                     print "[{0}] Archive: Data scraped does not differ from archived data.".format(
                         datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             else:
-                self.data_key = DATA_DIR + self.data_key
-                self.data_archive_key = DATA_DIR + self.data_archive_key
-
                 # archive to local dir
                 with open(self.data_key, "w") as data:
                     json.dump(payload, data)

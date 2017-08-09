@@ -14,7 +14,6 @@ class ForeignDoctorsScraper(Scraper):
             "name", "reg_no", "postal_address", "qualifications",
             "facility", "practice_type", "id"
         ]
-        self.es_index = ES["index"]
         self.es_doc = "doctors"
         self.data_key = "foreign_doctors.json"
         self.data_archive_key = "archive/foreign_doctors-{}.json"
