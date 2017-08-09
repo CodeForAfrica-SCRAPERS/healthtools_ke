@@ -1,5 +1,5 @@
 from healthtools.scrapers.nhif_outpatient import NhifOutpatientScraper
-from healthtools.config import ES, SITES
+from healthtools.config import SITES
 
 
 class NhifOutpatientCsScraper(NhifOutpatientScraper):
