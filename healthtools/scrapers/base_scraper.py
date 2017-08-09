@@ -38,8 +38,9 @@ class Scraper(object):
             "aws_secret_access_key": AWS["aws_secret_access_key"],
             "region_name": AWS["region_name"]
         })
-        self.data_key = None  # Storage key for latest data
-        self.data_archive_key = None  # Storage key for data to archive
+
+        self.data_key = DATA_DIR + "data.json"  # Storage key for latest data
+        self.data_archive_key = DATA_DIR + "archive/data-{}.json"  # Storage key for data to archive
 
         try:
             # client host for aws elastic search service

@@ -1,6 +1,7 @@
+import time
+
 from healthtools.scrapers.base_scraper import Scraper
 from healthtools.config import ES, SITES, SMALL_BATCH_NHIF
-import time
 
 
 class NhifInpatientScraper(Scraper):
