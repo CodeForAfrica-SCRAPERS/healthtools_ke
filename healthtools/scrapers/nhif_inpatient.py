@@ -9,6 +9,7 @@ class NhifInpatientScraper(Scraper):
         super(NhifInpatientScraper, self).__init__()
         self.site_url = SITES["NHIF_INPATIENT"]
         self.fields = ["hospital", "postal_addr", "beds", "branch", "category", "id"]
+        self.es_index = ES["index"]
         self.es_doc = "nhif-inpatient"
         self.data_key = "nhif_inpatient.json"
         self.data_archive_key = "archive/nhif_inpatient-{}.json"

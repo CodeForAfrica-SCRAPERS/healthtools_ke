@@ -4,7 +4,7 @@ from datetime import datetime
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 from json_serializer import JSONSerializerPython2
-from healthtools.config import AWS, ES, SLACK, DATA_DIR, SMALL_BATCH, NHIF_SERVICES
+from healthtools.config import AWS, ES, SLACK, DATA_DIR, SMALL_BATCH, NHIF_SERVICES, TEST_DIR
 import requests
 import boto3
 import re
@@ -38,8 +38,8 @@ class Scraper(object):
             "aws_secret_access_key": AWS["aws_secret_access_key"],
             "region_name": AWS["region_name"]
         })
-        self.data_key = None  # Storage key for latest data
-        self.data_archive_key = None  # Storage key for data to archive
+        self.data_key = DATA_DIR + "data.json"  # Storage key for latest data
+        self.data_archive_key = DATA_DIR + "archive/data-{}.json"  # Storage key for data to archive
 
         try:
             # client host for aws elastic search service
@@ -186,7 +186,7 @@ class Scraper(object):
         # all bulk data need meta data describing the data
         meta_dict = {
             "index": {
-                "_index": self.es_index,
+                "_index": ES["index"],
                 "_type": self.es_doc,
                 "_id": entry["id"]
             }
@@ -204,7 +204,7 @@ class Scraper(object):
                 print("[{0}] Elasticsearch: Index successfully created.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
             # bulk index the data and use refresh to ensure that our data will be immediately available
-            response = self.es_client.bulk(index=self.es_index, body=results, refresh=True)
+            response = self.es_client.bulk(index=ES["index"], body=results, refresh=True)
             print("[{0}] Elasticsearch: Index successful.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             return response
         except Exception as err:
@@ -229,6 +229,8 @@ class Scraper(object):
         '''
         Upload scraped data to AWS S3
         '''
+        data_key = DATA_DIR + self.data_key
+        data_archive_key = DATA_DIR + self.data_archive_key
         try:
             date = datetime.today().strftime("%Y%m%d")
             self.data_key = DATA_DIR + self.data_key
