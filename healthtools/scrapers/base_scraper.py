@@ -3,15 +3,14 @@ from cStringIO import StringIO
 from datetime import datetime
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
-from serializer import JSONSerializerPython2
-from healthtools.config import AWS, ES, SLACK, DATA_DIR, SITES, SMALL_BATCH, NHIF_SERVICES
+from json_serializer import JSONSerializerPython2
+from healthtools.config import AWS, ES, SLACK, DATA_DIR, SMALL_BATCH, NHIF_SERVICES
 import requests
 import boto3
 import re
 import json
 import hashlib
 import sys
-import os
 import getpass
 import time
 
@@ -31,7 +30,7 @@ class Scraper(object):
         self.fields = None
 
         self.doc_id = 1  # Id for each entry, to be incremented
-
+        self.es_index = ES["index"]  # Elasticsearch index
         self.es_doc = None  # Elasticsearch doc_type
 
         self.s3 = boto3.client("s3", **{
@@ -39,6 +38,7 @@ class Scraper(object):
             "aws_secret_access_key": AWS["aws_secret_access_key"],
             "region_name": AWS["region_name"]
         })
+
         self.data_key = DATA_DIR + "data.json"  # Storage key for latest data
         self.data_archive_key = DATA_DIR + "archive/data-{}.json"  # Storage key for data to archive
 
@@ -187,7 +187,7 @@ class Scraper(object):
         # all bulk data need meta data describing the data
         meta_dict = {
             "index": {
-                "_index": ES["index"],
+                "_index": self.es_index,
                 "_type": self.es_doc,
                 "_id": entry["id"]
             }
@@ -199,8 +199,13 @@ class Scraper(object):
         Upload data to Elastic Search
         '''
         try:
+            # sanity check
+            if not self.es_client.indices.exists(index=self.es_index):
+                self.es_client.indices.create(index=self.es_index)
+                print("[{0}] Elasticsearch: Index successfully created.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
             # bulk index the data and use refresh to ensure that our data will be immediately available
-            response = self.es_client.bulk(index=ES["index"], body=self.results_es, refresh=True)
+            response = self.es_client.bulk(index=self.es_index, body=results, refresh=True)
             print("[{0}] Elasticsearch: Index successful.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             return response
         except Exception as err:
@@ -213,7 +218,7 @@ class Scraper(object):
         try:
             delete_query = {"query": {"match_all": {}}}
             try:
-                response = self.es_client.delete_by_query(index=ES["index"], doc_type=self.es_doc, body=delete_query)
+                response = self.es_client.delete_by_query(index=self.es_index, doc_type=self.es_doc, body=delete_query, _source=True)
                 return response
             except Exception as err:
                 self.print_error("ERROR: elasticsearch_delete_docs() - {} - {}".format(type(self).__name__, str(err)))
@@ -225,37 +230,34 @@ class Scraper(object):
         '''
         Upload scraped data to AWS S3
         '''
-        data_key = DATA_DIR + self.data_key
-        data_archive_key = DATA_DIR + self.data_archive_key
         try:
             date = datetime.today().strftime("%Y%m%d")
+            self.data_key = DATA_DIR + self.data_key
+            self.data_archive_key = DATA_DIR + self.data_archive_key
             if AWS["s3_bucket"]:
                 old_etag = self.s3.get_object(
-                    Bucket=AWS["s3_bucket"], Key=data_key)["ETag"]
+                    Bucket=AWS["s3_bucket"], Key=self.data_key)["ETag"]
                 new_etag = hashlib.md5(payload.encode("utf-8")).hexdigest()
                 if eval(old_etag) != new_etag:
                     file_obj = StringIO(payload.encode("utf-8"))
                     self.s3.upload_fileobj(file_obj,
-                                           AWS["s3_bucket"], data_key)
+                                           AWS["s3_bucket"], self.data_key)
 
                     # archive historical data
                     self.s3.copy_object(Bucket=AWS["s3_bucket"],
-                                        CopySource="{}/".format(AWS["s3_bucket"]) + data_key,
-                                        Key=data_archive_key.format(date))
+                                        CopySource="{}/".format(AWS["s3_bucket"]) + self.data_key,
+                                        Key=self.data_archive_key.format(date))
                     print "[{0}] Archive: Data has been updated.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                     return
                 else:
                     print "[{0}] Archive: Data scraped does not differ from archived data.".format(
                         datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             else:
-                # check if it's test and append the correct path
-                if "test" in self.data_key:
-                    self.data_key = TEST_DIR + self.data_key
                 # archive to local dir
-                with open(data_key, "w") as data:
+                with open(self.data_key, "w") as data:
                     json.dump(payload, data)
                 # archive historical data to local dir
-                with open(data_archive_key.format(date), "w") as history:
+                with open(self.data_archive_key.format(date), "w") as history:
                     json.dump(payload, history)
                 print("[{0}] Archived: Data has been updated.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
@@ -273,21 +275,21 @@ class Scraper(object):
         if SLACK["url"]:
             errors = message.split("-", 3)
             try:
-                severity = errors[3].split(":")[1]
+                severity = errors[2].split(":")[1]
             except:
-                severity = errors[3]
+                severity = errors[1]
             response = requests.post(
                 SLACK["url"],
                 data=json.dumps({
                     "attachments":[
                         {
-                            "author_name": "{}".format(errors[2]),
+                            "author_name": "{}".format(errors[1]),
                             "color": "danger",
-                            "pretext": "[SCRAPER] New Alert for{}:{}".format(errors[2], errors[1]),
+                            "pretext": "[SCRAPER] New Alert for{}:{}".format(errors[1], errors[0]),
                             "fields": [
                                 {
                                     "title": "Message",
-                                    "value": "{}".format(errors[3]),
+                                    "value": "{}".format(errors[2]),
                                     "short": False
                                     },
                                 {

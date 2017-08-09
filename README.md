@@ -22,9 +22,9 @@ These instructions will get you a copy of the project up and running on your loc
 
 To get the data we follow a couple of steps:
 
-*1. Start by scraping the websites:* This is done in most cases using beautiful soup.
-*2. Elasticsearch update:* Replace data on elasticsearch with the new one. We only delete the documents after succesful completion of the scraping and not before. In the doctors' case, because we pull together foreign and local doctors, we won't update elasticsearch until both have been scraped succesfully.
-*3. Archive the data:* We archive the data in a "latest" .json file so that the url doesn't have to change to get the latest version in a "dump" format. A date-stamped archive is also stored as we later intend to do some analysis on the changes over time.
+**1. Start by scraping the websites:** This is done in most cases using beautiful soup.  
+**2. Elasticsearch update:** Replace data on elasticsearch with the new one. We only delete the documents after succesful   completion of the scraping and not before. In the doctors' case, because we pull together foreign and local doctors, we won't update elasticsearch until both have been scraped succesfully.  
+**3. Archive the data:** We archive the data in a "latest" .json file so that the url doesn't have to change to get the latest version in a "dump" format. A date-stamped archive is also stored as we later intend to do some analysis on the changes over time.
 
 
 Should the scraper fail at any of these points, we print out an error, and if set up, a Slack notification is sent.
@@ -104,4 +104,4 @@ Use `$ python scraper.py small_batch` to run the scrapers.
 Use nosetests to run tests (with stdout) like this:
 ```$ nosetests --nocapture```
 
-_**NB: <ake sure if you use elasticsearch locally, it's running**_
+_**NB: Make sure if you use elasticsearch locally, it's running**_
