@@ -24,7 +24,6 @@ SEARCH_URL = "http://api.kmhfl.health.go.ke/api/facilities/material/?page_size={
 class HealthFacilitiesScraper(Scraper):
     def __init__(self):
         super(HealthFacilitiesScraper, self).__init__()
-        self.es_index = ES["index"]
         self.es_doc = "health-facilities"
         self.data_key = "health_facilities.json"
         self.data_archive_key = "archive/health_facilities-{}.json"
