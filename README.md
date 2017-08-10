@@ -102,6 +102,6 @@ Use `$ python scraper.py small_batch` to run the scrapers.
 ## Tests
 
 Use nosetests to run tests (with stdout) like this:
-```$ nosetests --nocapture```
+```$ nosetests --nocapture``` or ```$ nosetests -s```
 
 _**NB: Make sure if you use elasticsearch locally, it's running**_

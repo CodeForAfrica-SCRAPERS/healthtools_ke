@@ -10,7 +10,7 @@ class NhifOutpatientCsScraper(NhifOutpatientScraper):
         self.fields = ["code", "hospital", "nhif_branch", "job_group", "cover", "id"]
         self.es_doc = "nhif-outpatient-cs"
         self.data_key = "nhif_outpatient_cs.json"
-        self.data_archive_key = "nhif_outpatient_cs-{}.json"
+        self.data_archive_key = "archive/nhif_outpatient_cs-{}.json"
 
     def set_site_pages_no(self):
         """

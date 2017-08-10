@@ -14,7 +14,7 @@ class NhifOutpatientScraper(Scraper):
         self.fields = ["code", "hospital", "nhif_branch", "id"]
         self.es_doc = "nhif-outpatient"
         self.data_key = "nhif_outpatient.json"
-        self.data_archive_key = "nhif_outpatient-{}.json"
+        self.data_archive_key = "archive/nhif_outpatient-{}.json"
 
     def scrape_page(self, tab_num, page_retries):
         """

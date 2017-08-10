@@ -1,38 +1,13 @@
 import json
 import os
-import unittest
-from healthtools.scrapers.base_scraper import Scraper
-from healthtools.scrapers.doctors import DoctorsScraper
-from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
-from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
-from healthtools.scrapers.health_facilities import HealthFacilitiesScraper
-from healthtools.scrapers.nhif_inpatient import NhifInpatientScraper
-from healthtools.scrapers.nhif_outpatient import NhifOutpatientScraper
-from healthtools.scrapers.nhif_outpatient_cs import NhifOutpatientCsScraper
-from healthtools.config import SLACK, AWS
+from healthtools.tests import BaseTest
+from healthtools.config import SLACK, AWS, DATA_DIR
 
 
-class TestScrapers(unittest.TestCase):
-
-    def setUp(self):
-        self.TEST_DIR = os.getcwd() + "/healthtools/tests/"
-        self.base_scraper = Scraper()
-        self.doctors_scraper = DoctorsScraper()
-        self.foreign_doctors_scraper = ForeignDoctorsScraper()
-        self.clinical_officers_scraper = ClinicalOfficersScraper()
-        self.health_facilities_scraper = HealthFacilitiesScraper()
-        self.nhif_inpatient_scraper = NhifInpatientScraper()
-        self.nhif_outpatient_scraper = NhifOutpatientScraper()
-        self.nhif_outpatient_cs_scraper = NhifOutpatientCsScraper()
-
-        index = "healthtools-test"
-        self.doctors_scraper.es_index = index
-        self.foreign_doctors_scraper.es_index = index
-        self.clinical_officers_scraper.es_index = index
-        self.health_facilities_scraper.es_index = index
-        self.nhif_inpatient_scraper.es_index = index
-        self.nhif_outpatient_scraper.es_index = index
-        self.nhif_outpatient_cs_scraper.es_index = index
+class TestScrapers(BaseTest):
+    """
+    Unit Tests for Scraper
+    """
 
     def test_it_gets_the_total_number_of_pages(self):
         self.doctors_scraper.set_site_pages_no()
@@ -68,48 +43,46 @@ class TestScrapers(unittest.TestCase):
     def test_doctors_scraper_uploads_to_elasticsearch(self):
         with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
             data = my_file.read()
-            response = self.doctors_scraper.elasticsearch_index(json.loads(data))
-            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
+        response = self.doctors_scraper.elasticsearch_index(json.loads(data))
+        self.assertEqual(response["items"][0]["index"]["created"], True)
 
     def test_foreign_doctors_scraper_uploads_to_elasticsearch(self):
         with open(self.TEST_DIR + "dummy_files/foreign_doctors.json", "r") as my_file:
             data = my_file.read()
-            response = self.foreign_doctors_scraper.elasticsearch_index(json.loads(data))
-            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
+        response = self.foreign_doctors_scraper.elasticsearch_index(json.loads(data))
+        self.assertEqual(response["items"][0]["index"]["created"], True)
 
     def test_clinical_officers_scraper_uploads_to_elasticsearch(self):
         with open(self.TEST_DIR + "dummy_files/clinical_officers.json", "r") as my_file:
             data = my_file.read()
-            response = self.clinical_officers_scraper.elasticsearch_index(json.loads(data))
-            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
+        response = self.clinical_officers_scraper.elasticsearch_index(json.loads(data))
+        self.assertEqual(response["items"][0]["index"]["created"], True)
 
     def test_health_facilities_scraper_uploads_to_elasticsearch(self):
         with open(self.TEST_DIR + "dummy_files/health_facilities.json", "r") as my_file:
             data = my_file.read()
-            response = self.health_facilities_scraper.elasticsearch_index(json.loads(data))
-            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
+        response = self.health_facilities_scraper.elasticsearch_index(json.loads(data))
+        self.assertEqual(response["items"][0]["index"]["created"], True)
 
     def test_nhif_inpatient_scraper_uploads_to_elasticsearch(self):
         with open(self.TEST_DIR + "dummy_files/nhif_inpatient.json", "r") as my_file:
             data = my_file.read()
-            response = self.nhif_inpatient_scraper.elasticsearch_index(json.loads(data))
-            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
+        response = self.nhif_inpatient_scraper.elasticsearch_index(json.loads(data))
+        self.assertEqual(response["items"][0]["index"]["created"], True)
 
     def test_nhif_outpatient_scraper_uploads_to_elasticsearch(self):
         with open(self.TEST_DIR + "dummy_files/nhif_outpatient.json", "r") as my_file:
             data = my_file.read()
-            response = self.nhif_outpatient_scraper.elasticsearch_index(json.loads(data))
-            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
+        response = self.nhif_outpatient_scraper.elasticsearch_index(json.loads(data))
+        self.assertEqual(response["items"][0]["index"]["created"], True)
 
     def test_nhif_outpatient_cs_scraper_uploads_to_elasticsearch(self):
         with open(self.TEST_DIR + "dummy_files/nhif_outpatient_cs.json", "r") as my_file:
             data = my_file.read()
-            response = self.nhif_outpatient_cs_scraper.elasticsearch_index(json.loads(data))
-            self.assertEqual(response["items"][0]["index"]["_shards"]["successful"], 1)
+        response = self.nhif_outpatient_cs_scraper.elasticsearch_index(json.loads(data))
+        self.assertEqual(response["items"][0]["index"]["created"], True)
 
     def test_doctors_scraper_archives_to_s3(self):
-        self.doctors_scraper.data_key = "test/doctors.json"
-        self.doctors_scraper.data_archive_key = "test/" + self.doctors_scraper.data_archive_key
         with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
             data = my_file.read()
             self.doctors_scraper.archive_data(data)
@@ -120,8 +93,6 @@ class TestScrapers(unittest.TestCase):
         self.assertEqual(uploaded_data, data)
 
     def test_foreign_doctors_scraper_archives_to_s3(self):
-        self.foreign_doctors_scraper.data_key = "test/foreign_doctors.json"
-        self.foreign_doctors_scraper.data_archive_key = "test/" + self.foreign_doctors_scraper.data_archive_key
         with open(self.TEST_DIR + "dummy_files/foreign_doctors.json", "r") as my_file:
             data = my_file.read()
             self.foreign_doctors_scraper.archive_data(data)
@@ -132,8 +103,6 @@ class TestScrapers(unittest.TestCase):
         self.assertEqual(uploaded_data, data)
 
     def test_clinical_officers_scraper_archives_to_s3(self):
-        self.clinical_officers_scraper.data_key = "test/clinical_officers.json"
-        self.clinical_officers_scraper.data_archive_key = "test/" + self.clinical_officers_scraper.data_archive_key
         with open(self.TEST_DIR + "dummy_files/clinical_officers.json", "r") as my_file:
             data = my_file.read()
             self.clinical_officers_scraper.archive_data(data)
@@ -144,8 +113,6 @@ class TestScrapers(unittest.TestCase):
         self.assertEqual(uploaded_data, data)
 
     def test_health_facilities_scraper_archives_to_s3(self):
-        self.health_facilities_scraper.data_key = "test/health_facilities.json"
-        self.health_facilities_scraper.data_archive_key = "test/" + self.health_facilities_scraper.data_archive_key
         with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
             data = my_file.read()
             self.health_facilities_scraper.archive_data(data)
@@ -156,8 +123,6 @@ class TestScrapers(unittest.TestCase):
         self.assertEqual(uploaded_data, data)
 
     def test_nhif_inpatient_archives_to_s3(self):
-        self.nhif_inpatient_scraper.data_key = "test/doctors.json"
-        self.nhif_inpatient_scraper.data_archive_key = "test/" + self.nhif_inpatient_scraper.data_archive_key
         with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
             data = my_file.read()
             self.nhif_inpatient_scraper.archive_data(data)
@@ -168,8 +133,6 @@ class TestScrapers(unittest.TestCase):
         self.assertEqual(uploaded_data, data)
 
     def test_nhif_outpatient_archives_to_s3(self):
-        self.nhif_outpatient_scraper.data_key = "test/doctors.json"
-        self.nhif_outpatient_scraper.data_archive_key = "test/" + self.nhif_outpatient_scraper.data_archive_key
         with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
             data = my_file.read()
             self.nhif_outpatient_scraper.archive_data(data)
@@ -180,8 +143,6 @@ class TestScrapers(unittest.TestCase):
         self.assertEqual(uploaded_data, data)
 
     def test_nhif_outpatient_cs_archives_to_s3(self):
-        self.nhif_outpatient_cs_scraper.data_key = "test/doctors.json"
-        self.nhif_outpatient_cs_scraper.data_archive_key = "test/" + self.nhif_outpatient_cs_scraper.data_archive_key
         with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
             data = my_file.read()
             self.nhif_outpatient_cs_scraper.archive_data(data)
@@ -196,7 +157,8 @@ class TestScrapers(unittest.TestCase):
         self.assertIsNotNone(self.health_facilities_scraper.access_token)
 
     def test_scrapper_prints_notification_on_error(self):
-        response = self.base_scraper.print_error("Testing Error - Error - Tests - Error posted:Error occurred")
+        response = self.base_scraper.print_error(
+            "- ERROR: test error \n- SOURCE: Test Error Posting \n- MESSAGE: Error occurred")
         if SLACK["url"]:
             self.assertEqual(response.status_code, 200)
         else:
@@ -204,50 +166,58 @@ class TestScrapers(unittest.TestCase):
 
     def test_delete_doctors_documents_from_elasticsearch(self):
         self.doctors_scraper.elasticsearch_delete_docs()  # make sure doc_type is empty
-        with open(self.TEST_DIR + "/dummy_files/doctors.json", "r") as my_file:
+        with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
             data = my_file.read()
         upload_response = self.doctors_scraper.elasticsearch_index(json.loads(data))
         delete_response = self.doctors_scraper.elasticsearch_delete_docs()
         self.assertEqual(len(upload_response["items"]), delete_response["deleted"])
 
     def test_delete_foreign_doctors_documents_from_elasticsearch(self):
-        with open(self.TEST_DIR + "/dummy_files/foreign_doctors.json", "r") as my_file:
+        with open(self.TEST_DIR + "dummy_files/foreign_doctors.json", "r") as my_file:
             data = my_file.read()
         upload_response = self.foreign_doctors_scraper.elasticsearch_index(json.loads(data))
         delete_response = self.foreign_doctors_scraper.elasticsearch_delete_docs()
         self.assertEqual(len(upload_response["items"]), delete_response["deleted"])
 
     def test_delete_clinical_officers_documents_from_elasticsearch(self):
-        with open(self.TEST_DIR + "/dummy_files/clinical_officers.json", "r") as my_file:
+        with open(self.TEST_DIR + "dummy_files/clinical_officers.json", "r") as my_file:
             data = my_file.read()
         upload_response = self.clinical_officers_scraper.elasticsearch_index(json.loads(data))
         delete_response = self.clinical_officers_scraper.elasticsearch_delete_docs()
         self.assertEqual(len(upload_response["items"]), delete_response["deleted"])
 
     def test_delete_health_facilities_documents_from_elasticsearch(self):
-        with open(self.TEST_DIR + "/dummy_files/health_facilities.json", "r") as my_file:
+        with open(self.TEST_DIR + "dummy_files/health_facilities.json", "r") as my_file:
             data = my_file.read()
         upload_response = self.health_facilities_scraper.elasticsearch_index(json.loads(data))
         delete_response = self.health_facilities_scraper.elasticsearch_delete_docs()
         self.assertEqual(len(upload_response["items"]), delete_response["deleted"])
 
     def test_delete_nhif_inpatient_documents_from_elasticsearch(self):
-        with open(self.TEST_DIR + "/dummy_files/nhif_inpatient.json", "r") as my_file:
+        with open(self.TEST_DIR + "dummy_files/nhif_inpatient.json", "r") as my_file:
             data = my_file.read()
         upload_response = self.nhif_inpatient_scraper.elasticsearch_index(json.loads(data))
         delete_response = self.nhif_inpatient_scraper.elasticsearch_delete_docs()
         self.assertEqual(len(upload_response["items"]), delete_response["deleted"])
 
     def test_delete_nhif_outpatient_documents_from_elasticsearch(self):
-        with open(self.TEST_DIR + "/dummy_files/nhif_outpatient.json", "r") as my_file:
+        with open(self.TEST_DIR + "dummy_files/nhif_outpatient.json", "r") as my_file:
             data = my_file.read()
         upload_response = self.nhif_outpatient_scraper.elasticsearch_index(json.loads(data))
         delete_response = self.nhif_outpatient_scraper.elasticsearch_delete_docs()
         self.assertEqual(len(upload_response["items"]), delete_response["deleted"])
 
     def test_delete_nhif_outpatient_cs_documents_from_elasticsearch(self):
-        with open(self.TEST_DIR + "/dummy_files/nhif_outpatient_cs.json", "r") as my_file:
+        with open(self.TEST_DIR + "dummy_files/nhif_outpatient_cs.json", "r") as my_file:
             data = my_file.read()
         upload_response = self.nhif_outpatient_cs_scraper.elasticsearch_index(json.loads(data))
         delete_response = self.nhif_outpatient_cs_scraper.elasticsearch_delete_docs()
         self.assertEqual(len(upload_response["items"]), delete_response["deleted"])
+
+    def test_local_data_directory_or_s3_bucket_provided_exists(self):
+        if not AWS["s3_bucket"]:
+            self.assertTrue(os.path.exists(DATA_DIR))
+        else:
+            key = DATA_DIR + self.doctors_scraper.data_key
+            response = self.doctors_scraper.s3.get_object(Bucket=AWS["s3_bucket"], Key=key)
+            self.assertEqual(response["ResponseMetadata"]["HTTPStatusCode"], 200)
