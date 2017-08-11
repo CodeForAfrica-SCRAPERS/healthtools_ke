@@ -31,8 +31,6 @@ if __name__ == "__main__":
     if doctors_result:
         foreign_doctors_scraper.doc_id = len(doctors_result)
         foreign_docs_result = foreign_doctors_scraper.run_scraper()
-    else:  # in the event doctor scraper fails, attempt on foreign doctors with id 1
-        foreign_docs_result = foreign_doctors_scraper.run_scraper()
 
     '''
     Clinical Officers Scraper

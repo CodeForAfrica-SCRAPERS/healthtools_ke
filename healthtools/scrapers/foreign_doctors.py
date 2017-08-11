@@ -1,5 +1,5 @@
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import SITES, ES
+from healthtools.config import SITES
 
 
 class ForeignDoctorsScraper(Scraper):

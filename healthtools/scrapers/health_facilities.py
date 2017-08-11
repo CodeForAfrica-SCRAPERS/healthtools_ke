@@ -1,6 +1,6 @@
 import json
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import ES, SMALL_BATCH_HF
+from healthtools.config import SMALL_BATCH_HF
 import requests
 from datetime import datetime
 

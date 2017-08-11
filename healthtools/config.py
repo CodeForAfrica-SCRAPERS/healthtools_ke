@@ -1,4 +1,5 @@
 import os
+import boto3
 
 AWS = {
     "aws_access_key_id": os.getenv("MORPH_AWS_ACCESS_KEY"),

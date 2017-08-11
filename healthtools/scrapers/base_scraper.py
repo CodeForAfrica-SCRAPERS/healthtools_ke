@@ -85,36 +85,37 @@ class Scraper(object):
         '''
         This functions scrapes the entire website by calling each page.
         '''
+        self.site_pages_no = self.set_site_pages_no()
+
         try:
-            self.set_site_pages_no()
-
-            for page_num in range(1, self.site_pages_no + 1):
-                # Check if is NHIF and if so just use page_num else format site_url
-                nhif = set(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower().split()) &\
-                    set(NHIF_SERVICES)
-
-                url = page_num if nhif else self.site_url.format(page_num)
-
-                results, results_es = self.scrape_page(url, 0)
-
-                if type(results) != list:
-                    self.print_error("- ERROR: scrape_site() \n- SOURCE: {} \n-MESSAGE: page: {} \ndata: {}".
-                                     format(url, page_num, results))
-                    return
-
-                self.results.extend(results)
-                self.results_es.extend(results_es)
-
-            if self.results:
-                self.archive_data(json.dumps(self.results))
-                self.elasticsearch_delete_docs()
-                self.elasticsearch_index(self.results_es)
-
-                return self.results
-
+            if not self.site_pages_no:
+                raise Exception("No pages found.")
         except Exception as err:
             self.print_error("- ERROR: scrape_site() \n- SOURCE: {} \n- MESSAGE: {}".format(self.site_url, err))
             return
+        for page_num in range(1, self.site_pages_no + 1):
+            # Check if is NHIF and if so just use page_num else format site_url
+            nhif = set(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower().split()) &\
+                set(NHIF_SERVICES)
+
+            url = page_num if nhif else self.site_url.format(page_num)
+
+            results, results_es = self.scrape_page(url, 5)
+
+            if type(results) != list:
+                self.print_error("- ERROR: scrape_site() \n- SOURCE: {} \n-MESSAGE: page: {} \ndata: {}".
+                                 format(url, page_num, results))
+                return
+
+            self.results.extend(results)
+            self.results_es.extend(results_es)
+
+        if self.results:
+            self.archive_data(json.dumps(self.results))
+            self.elasticsearch_delete_docs()
+            self.elasticsearch_index(self.results_es)
+
+        return self.results
 
     def scrape_page(self, page_url, page_retries):
         '''
@@ -147,11 +148,12 @@ class Scraper(object):
         except Exception as err:
             if page_retries >= 5:
                 self.print_error("- ERROR: scrape_page() \n- SOURCE: {} \n- MESSAGE: {}".format(page_url, str(err)))
-                return err
+                return
             else:
                 page_retries += 1
-                print("- ERROR: Try {}/5 has failed... \n- SOURCE: {} \n- MESSAGE {} \nGoing to sleep for {} seconds.".
-                      format(page_retries, page_url, err, page_retries*5))
+                self.print_error(
+                    "- ERROR: Try {}/5 has failed... \n- SOURCE: {} \n- MESSAGE {} \nGoing to sleep for {} seconds.".
+                    format(page_retries, page_url, err, page_retries*5))
                 time.sleep(page_retries*5)
                 self.scrape_page(page_url, page_retries)
 
@@ -162,13 +164,14 @@ class Scraper(object):
         try:
             # If small batch is set, that would be the number of pages.
             if self.small_batch:
-                self.site_pages_no = SMALL_BATCH
+                site_pages_no = SMALL_BATCH
             else:
                 soup = self.make_soup(self.site_url.format(1))
                 text = soup.find("div", {"id": "tnt_pagination"}).getText()
                 # What number of pages looks like
                 pattern = re.compile("(\d+) pages?")
-                self.site_pages_no = int(pattern.search(text).group(1))
+                site_pages_no = int(pattern.search(text).group(1))
+            return site_pages_no
         except Exception as err:
             self.print_error("- ERROR: get_total_page_numbers() \n- SOURCE: {} \n- MESSAGE: {}".
                              format(self.site_url, str(err)))
