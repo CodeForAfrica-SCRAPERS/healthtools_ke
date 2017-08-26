@@ -69,13 +69,11 @@ As such, we capture the following details:
 
 This data is printed in terminal in the following way:
 
-```
-[ Timestamp ] { Module / Scraper Name }
-[ Timestamp ] Scraper has started.
-[ Timestamp ] ERROR: { Module / Scraper Name } / { function name }
-[ Timestamp ] ERROR: { Error message }
+    [ Timestamp ] { Module / Scraper Name }
+    [ Timestamp ] Scraper has started.
+    [ Timestamp ] ERROR: { Module / Scraper Name } / { function name }
+    [ Timestamp ] ERROR: { Error message }
 
-```
 
 We also provide a Slack notification option detailed below.
 
