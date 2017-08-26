@@ -1,5 +1,5 @@
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import ES, DATA_DIR, SITES
+from healthtools.config import SITES
 from datetime import datetime
 
 

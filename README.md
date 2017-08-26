@@ -69,13 +69,11 @@ As such, we capture the following details:
 
 This data is printed in terminal in the following way:
 
-```
-[ Timestamp ] { Module / Scraper Name }
-[ Timestamp ] Scraper has started.
-[ Timestamp ] ERROR: { Module / Scraper Name } / { function name }
-[ Timestamp ] ERROR: { Error message }
+    [ Timestamp ] { Module / Scraper Name }
+    [ Timestamp ] Scraper has started.
+    [ Timestamp ] ERROR: { Module / Scraper Name } / { function name }
+    [ Timestamp ] ERROR: { Error message }
 
-```
 
 We also provide a Slack notification option detailed below.
 
@@ -102,6 +100,6 @@ Use `$ python scraper.py small_batch` to run the scrapers.
 ## Tests
 
 Use nosetests to run tests (with stdout) like this:
-```$ nosetests --nocapture```
+```$ nosetests --nocapture``` or ```$ nosetests -s```
 
 _**NB: Make sure if you use elasticsearch locally, it's running**_
