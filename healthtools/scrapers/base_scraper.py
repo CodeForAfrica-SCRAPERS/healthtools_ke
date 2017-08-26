@@ -5,6 +5,7 @@ from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 from json_serializer import JSONSerializerPython2
 from healthtools.config import AWS, ES, SLACK, DATA_DIR, SMALL_BATCH, NHIF_SERVICES
+from termcolor import colored
 import requests
 import boto3
 import re
@@ -59,7 +60,9 @@ class Scraper(object):
             else:
                 self.es_client = Elasticsearch("{}:{}".format(ES["host"], ES["port"]))
         except Exception as err:
-            self.print_error("ERROR: Invalid parameters for ES Client: {}".format(str(err)))
+            self.print_error(
+                "- ERROR: ES Client Set Up \n- SOURCE: Invalid parameters for ES Client \n- MESSAGE: {}".
+                format(str(err)))
 
         self.results = []
         self.results_es = []
@@ -82,8 +85,14 @@ class Scraper(object):
         '''
         This functions scrapes the entire website by calling each page.
         '''
-        self.set_site_pages_no()
+        self.site_pages_no = self.set_site_pages_no()
 
+        try:
+            if not self.site_pages_no:
+                raise Exception("No pages found.")
+        except Exception as err:
+            self.print_error("- ERROR: scrape_site() \n- SOURCE: {} \n- MESSAGE: {}".format(self.site_url, err))
+            return
         for page_num in range(1, self.site_pages_no + 1):
             # Check if is NHIF and if so just use page_num else format site_url
             nhif = set(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__).lower().split()) &\
@@ -91,27 +100,22 @@ class Scraper(object):
 
             url = page_num if nhif else self.site_url.format(page_num)
 
-            try:
-                results, results_es = self.scrape_page(url, 0)
+            results, results_es = self.scrape_page(url, 5)
 
-                if type(results) != list:
-                    self.print_error("ERROR: scrape_site() \nsource: {} \npage: {} \ndata: {}".
-                                     format(url, page_num, results))
-                    return
-
-                self.results.extend(results)
-                self.results_es.extend(results_es)
-
-            except Exception as err:
-                self.print_error("ERROR: scrape_site() \nsource: {} \npage: {} \nerr: {}".format(url, page_num, err))
+            if type(results) != list:
+                self.print_error("- ERROR: scrape_site() \n- SOURCE: {} \n-MESSAGE: page: {} \ndata: {}".
+                                 format(url, page_num, results))
                 return
+
+            self.results.extend(results)
+            self.results_es.extend(results_es)
 
         if self.results:
             self.archive_data(json.dumps(self.results))
             self.elasticsearch_delete_docs()
             self.elasticsearch_index(self.results_es)
 
-            return self.results
+        return self.results
 
     def scrape_page(self, page_url, page_retries):
         '''
@@ -143,12 +147,13 @@ class Scraper(object):
 
         except Exception as err:
             if page_retries >= 5:
-                self.print_error("ERROR: Failed to scrape data from page. \nurl: {} \nmsg: {}".format(page_url, str(err)))
-                return err
+                self.print_error("- ERROR: scrape_page() \n- SOURCE: {} \n- MESSAGE: {}".format(page_url, str(err)))
+                return
             else:
                 page_retries += 1
-                print("Try {}/5 has failed... \nERROR: {} \nGoing to sleep for {} seconds.".
-                      format(page_retries, err, page_retries*5))
+                self.print_error(
+                    "- ERROR: Try {}/5 has failed... \n- SOURCE: {} \n- MESSAGE {} \nGoing to sleep for {} seconds.".
+                    format(page_retries, page_url, err, page_retries*5))
                 time.sleep(page_retries*5)
                 self.scrape_page(page_url, page_retries)
 
@@ -159,15 +164,17 @@ class Scraper(object):
         try:
             # If small batch is set, that would be the number of pages.
             if self.small_batch:
-                self.site_pages_no = SMALL_BATCH
+                site_pages_no = SMALL_BATCH
             else:
                 soup = self.make_soup(self.site_url.format(1))
                 text = soup.find("div", {"id": "tnt_pagination"}).getText()
                 # What number of pages looks like
                 pattern = re.compile("(\d+) pages?")
-                self.site_pages_no = int(pattern.search(text).group(1))
+                site_pages_no = int(pattern.search(text).group(1))
+            return site_pages_no
         except Exception as err:
-            self.print_error("ERROR: get_total_page_numbers() - url: {} - err: {}".format(self.site_url, str(err)))
+            self.print_error("- ERROR: get_total_page_numbers() \n- SOURCE: {} \n- MESSAGE: {}".
+                             format(self.site_url, str(err)))
             return
 
     def make_soup(self, url):
@@ -202,14 +209,16 @@ class Scraper(object):
             # sanity check
             if not self.es_client.indices.exists(index=self.es_index):
                 self.es_client.indices.create(index=self.es_index)
-                print("[{0}] Elasticsearch: Index successfully created.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                print("[{0}] Elasticsearch: Index successfully created.".
+                      format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
             # bulk index the data and use refresh to ensure that our data will be immediately available
             response = self.es_client.bulk(index=self.es_index, body=results, refresh=True)
             print("[{0}] Elasticsearch: Index successful.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             return response
         except Exception as err:
-            self.print_error("ERROR: elasticsearch_index() - {} \nmsg: {}".format(type(self).__name__, str(err)))
+            self.print_error("- ERROR: elasticsearch_index() \n- SOURCE: {} \n- MESSAGE: {}".
+                             format(type(self).__name__, str(err)))
 
     def elasticsearch_delete_docs(self):
         '''
@@ -221,10 +230,12 @@ class Scraper(object):
                 response = self.es_client.delete_by_query(index=self.es_index, doc_type=self.es_doc, body=delete_query, _source=True)
                 return response
             except Exception as err:
-                self.print_error("ERROR: elasticsearch_delete_docs() - {} - {}".format(type(self).__name__, str(err)))
+                self.print_error("- ERROR: elasticsearch_delete_docs() \n- SOURCE: {} \n- MESSAGE: {}".
+                                 format(type(self).__name__, str(err)))
 
         except Exception as err:
-            self.print_error("ERROR: elasticsearch_delete_docs() - {} - {}".format(type(self).__name__, str(err)))
+            self.print_error("- ERROR: elasticsearch_delete_docs() \n- SOURCE: {} \n- MESSAGE: {}".
+                             format(type(self).__name__, str(err)))
 
     def archive_data(self, payload):
         '''
@@ -262,34 +273,44 @@ class Scraper(object):
                 print("[{0}] Archived: Data has been updated.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
         except Exception as err:
-            self.print_error(
-                "ERROR: archive_data() - {} - {}".format(self.data_key, str(err)))
+            self.print_error("- ERROR: archive_data() \n- SOURCE: {} \n- MESSAGE: {}".format(self.data_key, str(err)))
 
     def print_error(self, message):
         '''
         Print error messages in the terminal.
         If slack webhook is set up, post the errors to Slack.
         '''
-        print("[{0}] - ".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + message)
+        print colored("[{0}]\n".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + message, "red")
         response = None
         if SLACK["url"]:
-            errors = message.split("-", 3)
             try:
-                severity = errors[2].split(":")[1]
+                err = message.split("-", 3)
+                severity = err[3].split(":")[1]
+                errors = {
+                    "author": err[1].replace("ERROR:", "").strip(),
+                    "pretext": err[2].replace("SOURCE:", "").strip(),
+                    "message": err[3].replace("MESSAGE:", "").strip(),
+                    "severity": severity
+                    }
             except:
-                severity = errors[1]
+                errors = {
+                    "pretext": "",
+                    "author": message,
+                    "message": message,
+                    "severity": message
+                    }
             response = requests.post(
                 SLACK["url"],
                 data=json.dumps({
-                    "attachments":[
+                    "attachments": [
                         {
-                            "author_name": "{}".format(errors[1]),
+                            "author_name": "{}".format(errors["author"]),
                             "color": "danger",
-                            "pretext": "[SCRAPER] New Alert for{}:{}".format(errors[1], errors[0]),
+                            "pretext": "[SCRAPER] New Alert for {} : {}".format(errors["author"], errors["pretext"]),
                             "fields": [
                                 {
                                     "title": "Message",
-                                    "value": "{}".format(errors[2]),
+                                    "value": "{}".format(errors["message"]),
                                     "short": False
                                     },
                                 {
@@ -303,7 +324,7 @@ class Scraper(object):
                                     "short": True},
                                 {
                                     "title": "Severity",
-                                    "value": "{}".format(severity),
+                                    "value": "{}".format(errors["severity"]),
                                     "short": True
                                 }
                             ]
