@@ -1,20 +1,34 @@
+import argparse
+import boto3
+import getpass
+import hashlib
+import json
+import logging
+import os
+import progressbar
+import re
+import requests
+import sys
+import time
+
 from bs4 import BeautifulSoup
+from elasticsearch import Elasticsearch, RequestsHttpConnection
+
 from cStringIO import StringIO
 from datetime import datetime
-from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 from termcolor import colored
-import requests
-import boto3
-import re
-import json
-import hashlib
-import sys
-import getpass
-import time
+
+from logging.config import fileConfig
 
 from healthtools.config import AWS, ES, SLACK, DATA_DIR, SMALL_BATCH, NHIF_SERVICES
 from healthtools.lib.json_serializer import JSONSerializerPython2
+
+BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+
+ini_file = BASE_DIR + "/logging.ini"
+fileConfig(ini_file)
+logger = logging.getLogger(__name__)
 
 
 class Scraper(object):
@@ -23,9 +37,20 @@ class Scraper(object):
     -------------
     This is the default scraper inherited by the rest.
     '''
+
     def __init__(self):
 
-        self.small_batch = True if "small_batch" in sys.argv else False
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-sb', '--small_batch', action="store_true",
+                            help="Specify option to scrape limited pages from site in development mode")
+
+        args = parser.parse_args()
+
+        if args.small_batch:
+            logger.info('Using small batch')
+            self.small_batch = True
+        else:
+            self.small_batch = False
 
         self.site_url = None
         self.site_pages_no = None
@@ -42,13 +67,15 @@ class Scraper(object):
         })
 
         self.data_key = DATA_DIR + "data.json"  # Storage key for latest data
-        self.data_archive_key = DATA_DIR + "archive/data-{}.json"  # Storage key for data to archive
+        # Storage key for data to archive
+        self.data_archive_key = DATA_DIR + "archive/data-{}.json"
 
         try:
             # client host for aws elastic search service
             if "aws" in ES["host"]:
                 # set up authentication credentials
-                awsauth = AWS4Auth(AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], "es")
+                awsauth = AWS4Auth(
+                    AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], "es")
                 self.es_client = Elasticsearch(
                     hosts=[{"host": ES["host"], "port": int(ES["port"])}],
                     http_auth=awsauth,
@@ -59,7 +86,8 @@ class Scraper(object):
                 )
 
             else:
-                self.es_client = Elasticsearch("{}:{}".format(ES["host"], ES["port"]))
+                self.es_client = Elasticsearch(
+                    "{}:{}".format(ES["host"], ES["port"]))
         except Exception as err:
             self.print_error(
                 "- ERROR: ES Client Set Up \n- SOURCE: Invalid parameters for ES Client \n- MESSAGE: {}".
@@ -72,13 +100,13 @@ class Scraper(object):
         '''
         This function works to display some output and run scrape_site()
         '''
-        print "[{}] ".format(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
-        print "[{}] Started Scraper.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        scraper_name = re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__)
+        logger.info("%s started" % scraper_name)
 
         self.scrape_site()
 
-        print "[{}] Scraper completed. {} documents retrieved.".format(
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(self.results))
+        logger.info("{} completed. {} documents retrieved.".format(
+            scraper_name, len(self.results)))
 
         return self.results
 
@@ -93,6 +121,15 @@ class Scraper(object):
                 .format(self.site_url, "No pages found.")
             )
             return
+
+        scraper_name = re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__)
+        widgets = [' [', scraper_name, ': ',
+                   progressbar.Timer(), '] ',
+                   progressbar.Bar(marker='#', left='[', right=']'),
+                   ' (', progressbar.ETA(), ' ', progressbar.FileTransferSpeed(), ') '
+                   ]
+        pbar = progressbar.ProgressBar(
+            maxval=self.site_pages_no + 1, widgets=widgets).start()
 
         for page_num in range(1, self.site_pages_no + 1):
             # Check if is NHIF and if so just use page_num else format site_url
@@ -110,6 +147,10 @@ class Scraper(object):
 
             self.results.extend(results)
             self.results_es.extend(results_es)
+            
+            pbar.update(page_num+1)
+            time.sleep(0.05)
+        pbar.finish()
 
         if self.results:
             self.archive_data(json.dumps(self.results))
@@ -148,14 +189,15 @@ class Scraper(object):
 
         except Exception as err:
             if page_retries >= 5:
-                self.print_error("- ERROR: scrape_page() \n- SOURCE: {} \n- MESSAGE: {}".format(page_url, str(err)))
+                self.print_error(
+                    "- ERROR: scrape_page() \n- SOURCE: {} \n- MESSAGE: {}".format(page_url, str(err)))
                 return
             else:
                 page_retries += 1
                 self.print_error(
                     "- ERROR: Try {}/5 has failed... \n- SOURCE: {} \n- MESSAGE {} \nGoing to sleep for {} seconds.".
-                    format(page_retries, page_url, err, page_retries*5))
-                time.sleep(page_retries*5)
+                    format(page_retries, page_url, err, page_retries * 5))
+                time.sleep(page_retries * 5)
                 self.scrape_page(page_url, page_retries)
 
     def set_site_pages_no(self):
@@ -210,12 +252,13 @@ class Scraper(object):
             # sanity check
             if not self.es_client.indices.exists(index=self.es_index):
                 self.es_client.indices.create(index=self.es_index)
-                print("[{0}] Elasticsearch: Index successfully created.".
-                      format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                logger.info("Elasticsearch: Index successfully created")
 
-            # bulk index the data and use refresh to ensure that our data will be immediately available
-            response = self.es_client.bulk(index=self.es_index, body=results, refresh=True)
-            print("[{0}] Elasticsearch: Index successful.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            # bulk index the data and use refresh to ensure that our data will
+            # be immediately available
+            response = self.es_client.bulk(
+                index=self.es_index, body=results, refresh=True)
+            logger.info("Elasticsearch: Index successfully created")
             return response
         except Exception as err:
             self.print_error("- ERROR: elasticsearch_index() \n- SOURCE: {} \n- MESSAGE: {}".
@@ -228,7 +271,8 @@ class Scraper(object):
         try:
             delete_query = {"query": {"match_all": {}}}
             try:
-                response = self.es_client.delete_by_query(index=self.es_index, doc_type=self.es_doc, body=delete_query, _source=True)
+                response = self.es_client.delete_by_query(
+                    index=self.es_index, doc_type=self.es_doc, body=delete_query, _source=True)
                 return response
             except Exception as err:
                 self.print_error("- ERROR: elasticsearch_delete_docs() \n- SOURCE: {} \n- MESSAGE: {}".
@@ -257,13 +301,14 @@ class Scraper(object):
 
                     # archive historical data
                     self.s3.copy_object(Bucket=AWS["s3_bucket"],
-                                        CopySource="{}/".format(AWS["s3_bucket"]) + self.data_key,
+                                        CopySource="{}/".format(
+                                            AWS["s3_bucket"]) + self.data_key,
                                         Key=self.data_archive_key.format(date))
-                    print "[{0}] Archive: Data has been updated.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    logger.info("Archive: Data has been updated")
                     return
                 else:
-                    print "[{0}] Archive: Data scraped does not differ from archived data.".format(
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    logger.info(
+                        "Archive: Data scraped does not differ from archived data")
             else:
                 # archive to local dir
                 with open(self.data_key, "w") as data:
@@ -271,10 +316,11 @@ class Scraper(object):
                 # archive historical data to local dir
                 with open(self.data_archive_key.format(date), "w") as history:
                     json.dump(payload, history)
-                print("[{0}] Archived: Data has been updated.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                logger.info("Archived: Data has been updated")
 
         except Exception as err:
-            self.print_error("- ERROR: archive_data() \n- SOURCE: {} \n- MESSAGE: {}".format(self.data_key, str(err)))
+            self.print_error(
+                "- ERROR: archive_data() \n- SOURCE: {} \n- MESSAGE: {}".format(self.data_key, str(err)))
 
     def print_error(self, message):
         '''
@@ -313,12 +359,12 @@ class Scraper(object):
                                     "title": "Message",
                                     "value": "{}".format(errors["message"]),
                                     "short": False
-                                    },
+                                },
                                 {
                                     "title": "Machine Location",
                                     "value": "{}".format(getpass.getuser()),
                                     "short": True
-                                    },
+                                },
                                 {
                                     "title": "Time",
                                     "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
