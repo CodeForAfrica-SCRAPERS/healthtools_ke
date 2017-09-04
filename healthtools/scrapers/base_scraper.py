@@ -1,13 +1,14 @@
 import argparse
 import boto3
-import hashlib
+import botocore
 import getpass
+import hashlib
 import json
 import re
 import requests
 import time
 
-
+from botocore.exceptions import ClientError
 from bs4 import BeautifulSoup
 from cStringIO import StringIO
 from datetime import datetime
@@ -64,8 +65,9 @@ class Scraper(object):
             # client host for aws elastic search service
             if "aws" in ES["host"]:
                 # set up authentication credentials
-                awsauth = AWS4Auth(
-                    AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], "es")
+                awsauth = AWS4Auth(AWS["aws_access_key_id"],
+                                   AWS["aws_secret_access_key"],
+                                   AWS["region_name"], "es")
                 self.es_client = Elasticsearch(
                     hosts=[{"host": ES["host"], "port": int(ES["port"])}],
                     http_auth=awsauth,
@@ -85,6 +87,77 @@ class Scraper(object):
 
         self.results = []
         self.results_es = []
+
+    def handle_s3_objects(self, bucket_name):
+        """
+        Scraper checks that the AWS S3 bucket exist. If it does, it has the
+        expected structure contrary to which the scraper will
+        create the structure as expected.
+        """
+
+        _s3 = boto3.resource("s3", **{
+            "aws_access_key_id": AWS["aws_access_key_id"],
+            "aws_secret_access_key": AWS["aws_secret_access_key"],
+            "region_name": AWS["region_name"]
+        })
+
+        exists = True
+        try:
+            _s3.meta.client.head_bucket(Bucket=bucket_name)
+        except botocore.exceptions.ClientError as err:
+            # If a client error is thrown, then check that it was a 404 error.
+            # If it was a 404 error, then the bucket does not exist.
+            error_code = int(err.response['Error']['Code'])
+            if error_code == 404:
+                exists = False
+
+        if exists:
+            return ("Error (BucketAlreadyExists): The requested bucket name %s "
+                    "is not available. Select a different name and try again." % bucket_name,
+                    self.create_keys(exists, bucket_name))
+        else:
+            # Create S3 Bucket if not exist
+            response = self.s3.create_bucket(
+                ACL='private',
+                Bucket=bucket_name,
+                CreateBucketConfiguration={
+                    'LocationConstraint': AWS["region_name"]},
+            )
+            exists = True
+            return (response["ResponseMetadata"]["HTTPStatusCode"],
+                    self.create_keys(exists, bucket_name)
+                    )
+
+    def create_keys(self, exists, bucket_name):
+        """
+        Scraper checks or creates the bucket structure as expected.
+        """
+        if exists:
+            try:
+                # Amazon S3 will overwrite a key if it exists.
+                # And we definitely do not want that to happen
+
+                # Returns some or all (up to 1000) of the objects in a bucket
+                response = self.s3.list_objects(Bucket=bucket_name)
+
+                s3_keys = None
+                if "Contents" in response:
+                    s3_keys = [contents['Key']
+                               for contents in response["Contents"]]
+
+                # Check if the key exists. If not create it.
+                if not s3_keys or DATA_DIR not in s3_keys:
+                    new_key = self.s3.put_object(
+                        ACL='private',
+                        Bucket=bucket_name,
+                        Key=DATA_DIR,
+                    )
+                    return response["ResponseMetadata"]["HTTPStatusCode"]
+                else:
+                    return ("Key already exists. Select a different name and try again.")
+
+            except botocore.exceptions.ClientError as err:
+                print err
 
     def run_scraper(self):
         '''
@@ -280,6 +353,8 @@ class Scraper(object):
             date = datetime.today().strftime("%Y%m%d")
             self.data_key = DATA_DIR + self.data_key
             self.data_archive_key = DATA_DIR + self.data_archive_key
+            self.handle_s3_objects(bucket_name=AWS["s3_bucket"])
+
             if AWS["s3_bucket"]:
                 old_etag = self.s3.get_object(
                     Bucket=AWS["s3_bucket"], Key=self.data_key)["ETag"]
