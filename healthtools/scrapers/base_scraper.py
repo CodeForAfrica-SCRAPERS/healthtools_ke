@@ -1,34 +1,23 @@
 import argparse
 import boto3
-import getpass
 import hashlib
+import getpass
 import json
-import logging
-import os
-import progressbar
 import re
 import requests
-import sys
 import time
 
-from bs4 import BeautifulSoup
-from elasticsearch import Elasticsearch, RequestsHttpConnection
 
+from bs4 import BeautifulSoup
 from cStringIO import StringIO
 from datetime import datetime
+from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 from termcolor import colored
 
-from logging.config import fileConfig
-
-from healthtools.config import AWS, ES, SLACK, DATA_DIR, SMALL_BATCH, NHIF_SERVICES
+from healthtools.config import (AWS, ES, SLACK, DATA_DIR,
+                                SMALL_BATCH, NHIF_SERVICES)
 from healthtools.lib.json_serializer import JSONSerializerPython2
-
-BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-
-ini_file = BASE_DIR + "/logging.ini"
-fileConfig(ini_file)
-logger = logging.getLogger(__name__)
 
 
 class Scraper(object):
@@ -41,16 +30,17 @@ class Scraper(object):
     def __init__(self):
 
         parser = argparse.ArgumentParser()
-        parser.add_argument('-sb', '--small_batch', action="store_true",
+        parser.add_argument('-sb', '--small-batch', action="store_true",
                             help="Specify option to scrape limited pages from site in development mode")
+        parser.add_argument('-scr', '--scraper', nargs='+',
+                            choices=["doctors", "clinical_officers",
+                                     "health_facilities", "nhif_inpatient",
+                                     "nhif_outpatient", "nhif_outpatient_cs"],
+                            help="Specify to allow selection of what to scrape")
 
-        args = parser.parse_args()
+        self.args = parser.parse_args()
 
-        if args.small_batch:
-            logger.info('Using small batch')
-            self.small_batch = True
-        else:
-            self.small_batch = False
+        self.small_batch = True if self.args.small_batch else False
 
         self.site_url = None
         self.site_pages_no = None
@@ -101,14 +91,25 @@ class Scraper(object):
         This function works to display some output and run scrape_site()
         '''
         scraper_name = re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__)
-        logger.info("%s started" % scraper_name)
 
-        self.scrape_site()
+        _scraper_name = re.sub(" Scraper", "", scraper_name).lower()
+        _scraper_name = re.sub(" ", "_", _scraper_name)
 
-        logger.info("{} completed. {} documents retrieved.".format(
-            scraper_name, len(self.results)))
+        if self.args.scraper and "doctors" in self.args.scraper:
+            self.args.scraper.append("foreign_doctors")
 
-        return self.results
+        if not self.args.scraper or \
+                (self.args.scraper and _scraper_name in self.args.scraper):
+
+            print "[{}] ".format(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
+            print "[{}] Started Scraper.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
+            self.scrape_site()
+
+            print "[{}] Scraper completed. {} documents retrieved.".format(
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(self.results))
+
+            return self.results
 
     def scrape_site(self):
         '''
@@ -121,15 +122,6 @@ class Scraper(object):
                 .format(self.site_url, "No pages found.")
             )
             return
-
-        scraper_name = re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__)
-        widgets = [' [', scraper_name, ': ',
-                   progressbar.Timer(), '] ',
-                   progressbar.Bar(marker='#', left='[', right=']'),
-                   ' (', progressbar.ETA(), ' ', progressbar.FileTransferSpeed(), ') '
-                   ]
-        pbar = progressbar.ProgressBar(
-            maxval=self.site_pages_no + 1, widgets=widgets).start()
 
         for page_num in range(1, self.site_pages_no + 1):
             # Check if is NHIF and if so just use page_num else format site_url
@@ -147,10 +139,6 @@ class Scraper(object):
 
             self.results.extend(results)
             self.results_es.extend(results_es)
-            
-            pbar.update(page_num+1)
-            time.sleep(0.05)
-        pbar.finish()
 
         if self.results:
             self.archive_data(json.dumps(self.results))
@@ -252,13 +240,15 @@ class Scraper(object):
             # sanity check
             if not self.es_client.indices.exists(index=self.es_index):
                 self.es_client.indices.create(index=self.es_index)
-                logger.info("Elasticsearch: Index successfully created")
+                print("[{0}] Elasticsearch: Index successfully created.".
+                      format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
             # bulk index the data and use refresh to ensure that our data will
             # be immediately available
             response = self.es_client.bulk(
                 index=self.es_index, body=results, refresh=True)
-            logger.info("Elasticsearch: Index successfully created")
+            print("[{0}] Elasticsearch: Index successful.".format(
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             return response
         except Exception as err:
             self.print_error("- ERROR: elasticsearch_index() \n- SOURCE: {} \n- MESSAGE: {}".
@@ -304,11 +294,11 @@ class Scraper(object):
                                         CopySource="{}/".format(
                                             AWS["s3_bucket"]) + self.data_key,
                                         Key=self.data_archive_key.format(date))
-                    logger.info("Archive: Data has been updated")
+                    print "[{0}] Archive: Data has been updated.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                     return
                 else:
-                    logger.info(
-                        "Archive: Data scraped does not differ from archived data")
+                    print "[{0}] Archive: Data scraped does not differ from archived data.".format(
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             else:
                 # archive to local dir
                 with open(self.data_key, "w") as data:
@@ -316,7 +306,8 @@ class Scraper(object):
                 # archive historical data to local dir
                 with open(self.data_archive_key.format(date), "w") as history:
                     json.dump(payload, history)
-                logger.info("Archived: Data has been updated")
+                print("[{0}] Archived: Data has been updated.".format(
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
         except Exception as err:
             self.print_error(
