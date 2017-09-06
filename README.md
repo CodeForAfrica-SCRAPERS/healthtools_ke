@@ -36,7 +36,7 @@ Clone the repo from Github by running `$ git clone git@github.com:CodeForAfrica-
 
 Change directory into the package `$ cd healthtools_ke`.
 
-Install the dependencies by running `$ pip install requirements.txt`.
+Install the dependencies by running `$ pip install -r requirements.txt`.
 
 You can set the required environment variables like so
 
@@ -94,7 +94,8 @@ In development, instead of scraping entire websites, you can scrape only a small
 
 Set the `SMALL_BATCH`, `SMALL_BATCH_HF` (for health facilities scrapers), and `SMALL_BATCH_NHIF` (for NHIF scrapers) in the config file that will ensure the scraper doesn't scrape entire sites but just the number of pages that you would like it to scrape defined by this variable.
 
-Use `$ python scraper.py small_batch` to run the scrapers.
+Usage `$ python scraper.py --help`
+    Example `$ python scraper.py --small-batch --scraper doctors clinical_officers ` to run the scrapers.
 
 
 ## Tests

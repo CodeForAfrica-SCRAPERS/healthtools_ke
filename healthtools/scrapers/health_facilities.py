@@ -53,7 +53,7 @@ class HealthFacilitiesScraper(Scraper):
             response = requests.post(TOKEN_URL, data=data, headers=headers)
             self.access_token = json.loads(response.text)["access_token"]
             print("[{0}] Access token received.".format(
-                   datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         except Exception as err:
             self.print_error("ERROR: get_token() - {}".format(str(err)))
 
