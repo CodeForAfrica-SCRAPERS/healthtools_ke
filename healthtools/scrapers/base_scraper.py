@@ -1,13 +1,14 @@
 import argparse
 import boto3
-import hashlib
+import botocore
 import getpass
+import hashlib
 import json
 import re
 import requests
 import time
 
-
+from botocore.exceptions import ClientError
 from bs4 import BeautifulSoup
 from cStringIO import StringIO
 from datetime import datetime
@@ -18,6 +19,8 @@ from termcolor import colored
 from healthtools.config import (AWS, ES, SLACK, DATA_DIR,
                                 SMALL_BATCH, NHIF_SERVICES)
 from healthtools.lib.json_serializer import JSONSerializerPython2
+
+from healthtools.handle_s3_objects import S3ObjectHandler
 
 
 class Scraper(object):
@@ -56,6 +59,8 @@ class Scraper(object):
             "region_name": AWS["region_name"]
         })
 
+        self.s3_handler = S3ObjectHandler(self.s3)
+
         self.data_key = DATA_DIR + "data.json"  # Storage key for latest data
         # Storage key for data to archive
         self.data_archive_key = DATA_DIR + "archive/data-{}.json"
@@ -64,8 +69,9 @@ class Scraper(object):
             # client host for aws elastic search service
             if "aws" in ES["host"]:
                 # set up authentication credentials
-                awsauth = AWS4Auth(
-                    AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], "es")
+                awsauth = AWS4Auth(AWS["aws_access_key_id"],
+                                   AWS["aws_secret_access_key"],
+                                   AWS["region_name"], "es")
                 self.es_client = Elasticsearch(
                     hosts=[{"host": ES["host"], "port": int(ES["port"])}],
                     http_auth=awsauth,
@@ -85,6 +91,8 @@ class Scraper(object):
 
         self.results = []
         self.results_es = []
+
+    
 
     def run_scraper(self):
         '''
@@ -206,6 +214,8 @@ class Scraper(object):
         if self.small_batch and self.site_pages_no and self.site_pages_no > SMALL_BATCH:
             self.site_pages_no = SMALL_BATCH
 
+        return self.site_pages_no
+
         # TODO: Print how many pages we found
 
     def make_soup(self, url):
@@ -280,7 +290,11 @@ class Scraper(object):
             date = datetime.today().strftime("%Y%m%d")
             self.data_key = DATA_DIR + self.data_key
             self.data_archive_key = DATA_DIR + self.data_archive_key
+
             if AWS["s3_bucket"]:
+                # Check if bucket exists and has the expected file structure
+                self.s3_handler.handle_s3_objects(bucket_name=AWS["s3_bucket"], key=self.data_key)
+
                 old_etag = self.s3.get_object(
                     Bucket=AWS["s3_bucket"], Key=self.data_key)["ETag"]
                 new_etag = hashlib.md5(payload.encode("utf-8")).hexdigest()

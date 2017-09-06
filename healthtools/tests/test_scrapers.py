@@ -217,7 +217,11 @@ class TestScrapers(BaseTest):
 
     def test_local_data_directory_or_s3_bucket_provided_exists(self):
         if AWS["s3_bucket"]:
-            s3 = boto3.resource("s3")
+            s3 = boto3.resource("s3", **{
+                "aws_access_key_id": AWS["aws_access_key_id"],
+                "aws_secret_access_key": AWS["aws_secret_access_key"],
+                "region_name": AWS["region_name"]
+            })
             bucket = s3.meta.client.head_bucket(Bucket=AWS["s3_bucket"])
             self.assertEqual(bucket["ResponseMetadata"]["HTTPStatusCode"], 200)
         else:
