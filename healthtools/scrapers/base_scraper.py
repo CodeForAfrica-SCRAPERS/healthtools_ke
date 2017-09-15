@@ -372,7 +372,7 @@ class Scraper(object):
         '''
 
         error = "- ERROR: " + message['ERROR']
-        source = "- SOURCE: " + message['SOURCE']
+        source = ("- SOURCE: " + message['SOURCE']) if "SOURCE" in message else ""
         error_msg = "- MESSAGE: " + message['MESSAGE']
         msg = "\n".join([error, source, error_msg])
 
