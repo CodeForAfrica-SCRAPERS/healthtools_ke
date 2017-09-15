@@ -55,7 +55,11 @@ class HealthFacilitiesScraper(Scraper):
             print("[{0}] Access token received.".format(
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         except Exception as err:
-            self.print_error("ERROR: get_token() - {}".format(str(err)))
+            error = {
+                "ERROR": "get_token()",
+                "MESSAGE": str(err)
+            }
+            self.print_error(error)
 
     def get_data(self):
         try:
@@ -75,7 +79,11 @@ class HealthFacilitiesScraper(Scraper):
                 self.doc_id += 1
 
         except Exception as err:
-            self.print_error("ERROR: get_data() - {}".format(err))
+            error = {
+                "ERROR": "get_data()",
+                "MESSAGE": str(err)
+            }
+            self.print_error(error)
 
     def elasticsearch_format(self, entry):
         meta_dict = {

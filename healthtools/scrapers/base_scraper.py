@@ -1,14 +1,13 @@
 import argparse
 import boto3
-import botocore
 import getpass
 import hashlib
 import json
+import logging
 import re
 import requests
 import time
 
-from botocore.exceptions import ClientError
 from bs4 import BeautifulSoup
 from cStringIO import StringIO
 from datetime import datetime
@@ -86,10 +85,10 @@ class Scraper(object):
                     "{}:{}".format(ES["host"], ES["port"]))
         except Exception as err:
             error = {
-                    "ERROR": "ES Client Set Up",
-                    "SOURCE": "Invalid parameters for ES Client",
-                    "MESSAGE": str(err)
-                }
+                "ERROR": "ES Client Set Up",
+                "SOURCE": "Invalid parameters for ES Client",
+                "MESSAGE": str(err)
+            }
             self.print_error(error)
 
         self.results = []
@@ -125,10 +124,6 @@ class Scraper(object):
         This functions scrapes the entire website by calling each page.
         '''
         self.set_site_pages_no()
-
-
-        # self.site_pages_no = None
-
 
         if not self.site_pages_no:
             error = {
@@ -300,7 +295,8 @@ class Scraper(object):
             delete_query = {"query": {"match_all": {}}}
             try:
                 response = self.es_client.delete_by_query(
-                    index=self.es_index, doc_type=self.es_doc, body=delete_query, _source=True)
+                    index=self.es_index, doc_type=self.es_doc,
+                    body=delete_query, _source=True)
                 return response
             except Exception as err:
                 error = {
