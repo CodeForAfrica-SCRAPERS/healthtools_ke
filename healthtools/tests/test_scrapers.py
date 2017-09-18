@@ -157,9 +157,13 @@ class TestScrapers(BaseTest):
         self.health_facilities_scraper.get_token()
         self.assertIsNotNone(self.health_facilities_scraper.access_token)
 
-    def test_scrapper_prints_notification_on_error(self):
-        response = self.base_scraper.print_error(
-            "- ERROR: test error \n- SOURCE: Test Error Posting \n- MESSAGE: Error occurred")
+    def test_scraper_prints_notification_on_error(self):
+        error = {
+                    "ERROR": "test error",
+                    "SOURCE": "Test Error Posting",
+                    "MESSAGE": "Error occurred"
+                }
+        response = self.base_scraper.print_error(error)
         if SLACK["url"]:
             self.assertEqual(response.status_code, 200)
         else:
