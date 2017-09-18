@@ -83,75 +83,75 @@ class TestScrapers(BaseTest):
         response = self.nhif_outpatient_cs_scraper.elasticsearch_index(json.loads(data))
         self.assertEqual(len(response["items"]), len(json.loads(data))/2)
 
-    # def test_doctors_scraper_archives_to_s3(self):
-    #     with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
-    #         data = my_file.read()
-    #         self.doctors_scraper.archive_data(data)
-    #     uploaded_data = self.doctors_scraper.s3.get_object(
-    #         Bucket=AWS["s3_bucket"],
-    #         Key=self.doctors_scraper.data_key
-    #         )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.doctors_scraper.data_key))
-    #     self.assertEqual(uploaded_data, data)
+    def test_doctors_scraper_archives_to_s3(self):
+        with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
+            data = my_file.read()
+            self.doctors_scraper.archive_data(data)
+        uploaded_data = self.doctors_scraper.s3.get_object(
+            Bucket=AWS["s3_bucket"],
+            Key=self.doctors_scraper.data_key
+            )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.doctors_scraper.data_key))
+        self.assertEqual(uploaded_data, data)
 
-    # def test_foreign_doctors_scraper_archives_to_s3(self):
-    #     with open(self.TEST_DIR + "dummy_files/foreign_doctors.json", "r") as my_file:
-    #         data = my_file.read()
-    #         self.foreign_doctors_scraper.archive_data(data)
-    #     uploaded_data = self.foreign_doctors_scraper.s3.get_object(
-    #         Bucket=AWS["s3_bucket"],
-    #         Key=self.foreign_doctors_scraper.data_key
-    #         )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.foreign_doctors_scraper.data_key))
-    #     self.assertEqual(uploaded_data, data)
+    def test_foreign_doctors_scraper_archives_to_s3(self):
+        with open(self.TEST_DIR + "dummy_files/foreign_doctors.json", "r") as my_file:
+            data = my_file.read()
+            self.foreign_doctors_scraper.archive_data(data)
+        uploaded_data = self.foreign_doctors_scraper.s3.get_object(
+            Bucket=AWS["s3_bucket"],
+            Key=self.foreign_doctors_scraper.data_key
+            )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.foreign_doctors_scraper.data_key))
+        self.assertEqual(uploaded_data, data)
 
-    # def test_clinical_officers_scraper_archives_to_s3(self):
-    #     with open(self.TEST_DIR + "dummy_files/clinical_officers.json", "r") as my_file:
-    #         data = my_file.read()
-    #         self.clinical_officers_scraper.archive_data(data)
-    #     uploaded_data = self.clinical_officers_scraper.s3.get_object(
-    #         Bucket=AWS["s3_bucket"],
-    #         Key=self.clinical_officers_scraper.data_key
-    #         )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.clinical_officers_scraper.data_key))
-    #     self.assertEqual(uploaded_data, data)
+    def test_clinical_officers_scraper_archives_to_s3(self):
+        with open(self.TEST_DIR + "dummy_files/clinical_officers.json", "r") as my_file:
+            data = my_file.read()
+            self.clinical_officers_scraper.archive_data(data)
+        uploaded_data = self.clinical_officers_scraper.s3.get_object(
+            Bucket=AWS["s3_bucket"],
+            Key=self.clinical_officers_scraper.data_key
+            )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.clinical_officers_scraper.data_key))
+        self.assertEqual(uploaded_data, data)
 
-    # def test_health_facilities_scraper_archives_to_s3(self):
-    #     with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
-    #         data = my_file.read()
-    #         self.health_facilities_scraper.archive_data(data)
-    #     uploaded_data = self.health_facilities_scraper.s3.get_object(
-    #         Bucket=AWS["s3_bucket"],
-    #         Key=self.health_facilities_scraper.data_key
-    #         )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.health_facilities_scraper.data_key))
-    #     self.assertEqual(uploaded_data, data)
+    def test_health_facilities_scraper_archives_to_s3(self):
+        with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
+            data = my_file.read()
+            self.health_facilities_scraper.archive_data(data)
+        uploaded_data = self.health_facilities_scraper.s3.get_object(
+            Bucket=AWS["s3_bucket"],
+            Key=self.health_facilities_scraper.data_key
+            )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.health_facilities_scraper.data_key))
+        self.assertEqual(uploaded_data, data)
 
-    # def test_nhif_inpatient_archives_to_s3(self):
-    #     with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
-    #         data = my_file.read()
-    #         self.nhif_inpatient_scraper.archive_data(data)
-    #     uploaded_data = self.nhif_inpatient_scraper.s3.get_object(
-    #         Bucket=AWS["s3_bucket"],
-    #         Key=self.nhif_inpatient_scraper.data_key
-    #         )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.nhif_inpatient_scraper.data_key))
-    #     self.assertEqual(uploaded_data, data)
+    def test_nhif_inpatient_archives_to_s3(self):
+        with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
+            data = my_file.read()
+            self.nhif_inpatient_scraper.archive_data(data)
+        uploaded_data = self.nhif_inpatient_scraper.s3.get_object(
+            Bucket=AWS["s3_bucket"],
+            Key=self.nhif_inpatient_scraper.data_key
+            )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.nhif_inpatient_scraper.data_key))
+        self.assertEqual(uploaded_data, data)
 
-    # def test_nhif_outpatient_archives_to_s3(self):
-    #     with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
-    #         data = my_file.read()
-    #         self.nhif_outpatient_scraper.archive_data(data)
-    #     uploaded_data = self.nhif_outpatient_scraper.s3.get_object(
-    #         Bucket=AWS["s3_bucket"],
-    #         Key=self.nhif_outpatient_scraper.data_key
-    #         )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.nhif_outpatient_scraper.data_key))
-    #     self.assertEqual(uploaded_data, data)
+    def test_nhif_outpatient_archives_to_s3(self):
+        with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
+            data = my_file.read()
+            self.nhif_outpatient_scraper.archive_data(data)
+        uploaded_data = self.nhif_outpatient_scraper.s3.get_object(
+            Bucket=AWS["s3_bucket"],
+            Key=self.nhif_outpatient_scraper.data_key
+            )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.nhif_outpatient_scraper.data_key))
+        self.assertEqual(uploaded_data, data)
 
-    # def test_nhif_outpatient_cs_archives_to_s3(self):
-    #     with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
-    #         data = my_file.read()
-    #         self.nhif_outpatient_cs_scraper.archive_data(data)
-    #     uploaded_data = self.nhif_outpatient_cs_scraper.s3.get_object(
-    #         Bucket=AWS["s3_bucket"],
-    #         Key=self.nhif_outpatient_cs_scraper.data_key
-    #         )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.nhif_outpatient_cs_scraper.data_key))
-    #     self.assertEqual(uploaded_data, data)
+    def test_nhif_outpatient_cs_archives_to_s3(self):
+        with open(self.TEST_DIR + "dummy_files/doctors.json", "r") as my_file:
+            data = my_file.read()
+            self.nhif_outpatient_cs_scraper.archive_data(data)
+        uploaded_data = self.nhif_outpatient_cs_scraper.s3.get_object(
+            Bucket=AWS["s3_bucket"],
+            Key=self.nhif_outpatient_cs_scraper.data_key
+            )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.nhif_outpatient_cs_scraper.data_key))
+        self.assertEqual(uploaded_data, data)
 
     def test_health_facilities_scraper_gets_token(self):
         self.health_facilities_scraper.get_token()
