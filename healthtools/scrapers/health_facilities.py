@@ -21,20 +21,25 @@ class HealthFacilitiesScraper(Scraper):
         self.total_pages = 0
 
     def scrape_site(self, page_no=1):
-        if page_no == 1:
-            self.get_token()
-
+        self.get_token()
         self.get_data(page_no)
-
         if self.results:
-            if page_no == 1:
-                self.elasticsearch_delete_docs()
+            self.elasticsearch_delete_docs()
             self.elasticsearch_index(self.results_es)
-            if page_no < self.total_pages:
-                self.scrape_site(page_no=page_no + 1)
-            else:
-                self.archive_data(json.dumps(self.results))
-                return self.results
+        try:
+            while page_no < self.total_pages:
+                self.get_data(page_no + 1)
+                if self.results:
+                    self.elasticsearch_index(self.results_es)
+                page_no += 1
+        except Exception as err:
+            error = {
+                "ERROR": "scrape_site()",
+                "MESSAGE": str(err)
+            }
+            self.print_error(error)
+        self.archive_data(json.dumps(self.results))
+        return self.results
 
     def get_token(self):
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
