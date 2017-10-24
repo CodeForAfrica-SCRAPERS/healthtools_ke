@@ -1,4 +1,5 @@
 import argparse
+import logging
 import boto3
 import botocore
 
@@ -6,6 +7,7 @@ from botocore.exceptions import ClientError
 
 from healthtools.config import AWS
 
+logger = logging.getLogger(__name__)
 
 class S3ObjectHandler(object):
     """
@@ -95,4 +97,4 @@ class S3ObjectHandler(object):
                 return msg
 
             except botocore.exceptions.ClientError as err:
-                print err
+                logger.error(err)
