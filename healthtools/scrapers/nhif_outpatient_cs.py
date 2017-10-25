@@ -23,5 +23,10 @@ class NhifOutpatientCsScraper(NhifOutpatientScraper):
             self.site_pages_no = len(
                 [tag.name for tag in soup.find("div", {"id": "accordion"}) if tag.name == 'div'])
         except Exception as err:
-            self.print_error("ERROR: set_site_pages_no() \nurl: {} \nerr: {}".format(self.site_url, str(err)))
+            error = {
+                    "ERROR": "NHIF Outpatient CS: set_site_pages_no()",
+                    "SOURCE": "url: %s" % self.site_url,
+                    "MESSAGE": str(err)
+                }
+            self.print_error(error)
             return

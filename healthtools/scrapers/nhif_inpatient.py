@@ -56,7 +56,12 @@ class NhifInpatientScraper(Scraper):
             return results, results_es
         except Exception as err:
             if page_retries >= 5:
-                self.print_error("ERROR: Failed to scrape data from page. \nurl: {} \nerr: {}".format(tab_num, str(err)))
+                error = {
+                    "ERROR": "Failed to scrape data from NHIH Inpatient page.",
+                    "SOURCE": "scrape_page() url: %s" % tab_num,
+                    "MESSAGE": str(err)
+                }
+                self.print_error(error)
                 return err
             else:
                 page_retries += 1
@@ -75,5 +80,10 @@ class NhifInpatientScraper(Scraper):
             self.site_pages_no = len(
                 [tag.name for tag in soup.find("div", {"class": "tab-content"}) if tag.name == 'div'])
         except Exception as err:
-            self.print_error("ERROR: set_site_pages_no() \nurl: {} \nerr: {}".format(self.site_url, str(err)))
+            error = {
+                    "ERROR": "NHIF Inpatient: set_site_pages_no()",
+                    "SOURCE": "url: %s" % self.site_url,
+                    "MESSAGE": str(err)
+                }
+            self.print_error(error)
             return

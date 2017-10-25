@@ -1,5 +1,5 @@
 import os
-import boto3
+
 
 AWS = {
     "aws_access_key_id": os.getenv("MORPH_AWS_ACCESS_KEY"),
@@ -20,14 +20,16 @@ SLACK = {
 
 
 SMALL_BATCH = 5  # No of pages from clinical officers, doctors and foreign doctors sites, scrapped in development mode
-SMALL_BATCH_HF = 100  # No of records scraped from health-facilities sites in development mode
+# No of records scraped from health-facilities sites in development mode
+SMALL_BATCH_HF = 100
 SMALL_BATCH_NHIF = 1  # No of nhif accredited facilities scraped in development mode
 
 if AWS["s3_bucket"]:
     DATA_DIR = "data/"
 else:
     # Where we archive the data in case of no s3 Bucket
-    DATA_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/data/"
+    DATA_DIR = os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))) + "/data/"
     if not os.path.exists(DATA_DIR):
         os.mkdir(DATA_DIR)
         os.mkdir(DATA_DIR + "archive")
