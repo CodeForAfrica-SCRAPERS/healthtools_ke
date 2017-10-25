@@ -66,8 +66,8 @@ class NhifOutpatientScraper(Scraper):
                 return err
             else:
                 page_retries += 1
-                logger.error("Try {}/5 has failed... \n{} \nGoing to sleep for {} seconds.".
-                      format(page_retries, err, page_retries*5))
+                logger.error("Try %d/5 has failed... \n%s \nGoing to sleep for %d seconds.",
+                      page_retries, err, page_retries*5)
                 time.sleep(page_retries*5)
                 self.scrape_page(tab_num, page_retries)
 

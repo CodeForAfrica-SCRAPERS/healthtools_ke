@@ -110,13 +110,13 @@ class Scraper(object):
         if not self.args.scraper or \
                 (self.args.scraper and _scraper_name in self.args.scraper):
 
-            logger.info("[{}] ".format(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__)))
-            logger.info("[{}] Started Scraper.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            logger.info("[%s]", re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
+            logger.info("[%s] Started Scraper.", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
             self.scrape_site()
 
-            logger.info("[{}] Scraper completed. {} documents retrieved.".format(
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(self.results)))
+            logger.info("[%s] Scraper completed. %s documents retrieved.",
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(self.results))
 
             return self.results
 
@@ -188,7 +188,7 @@ class Scraper(object):
                 results.append(entry)
 
                 self.doc_id += 1
-
+                
             return results, results_es
 
         except Exception as err:
@@ -270,15 +270,15 @@ class Scraper(object):
             # sanity check
             if not self.es_client.indices.exists(index=self.es_index):
                 self.es_client.indices.create(index=self.es_index)
-                logger.info("[{0}] Elasticsearch: Index successfully created.".
-                      format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                logger.info("[%s] Elasticsearch: Index successfully created.", 
+                      datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
             # bulk index the data and use refresh to ensure that our data will
             # be immediately available
             response = self.es_client.bulk(
                 index=self.es_index, body=results, refresh=True)
-            logger.info("[{0}] Elasticsearch: Index successful.".format(
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            logger.info("[%s] Elasticsearch: Index successful.", 
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             return response
         except Exception as err:
             error = {
@@ -342,11 +342,11 @@ class Scraper(object):
                                         CopySource="{}/".format(
                                             AWS["s3_bucket"]) + self.data_key,
                                         Key=self.data_archive_key.format(date))
-                    logger.info("[{0}] Archive: Data has been updated.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                    logger.info("[%s] Archive: Data has been updated.", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                     return
                 else:
-                    logger.info("[{0}] Archive: Data scraped does not differ from archived data.".format(
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                    logger.info("[%s] Archive: Data scraped does not differ from archived data.", 
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             else:
                 # archive to local dir
                 with open(self.data_key, "w") as data:
@@ -354,8 +354,8 @@ class Scraper(object):
                 # archive historical data to local dir
                 with open(self.data_archive_key.format(date), "w") as history:
                     json.dump(payload, history)
-                logger.info("[{0}] Archived: Data has been updated.".format(
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                logger.info("[%s] Archived: Data has been updated.", 
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         except Exception as err:
             error = {
@@ -377,8 +377,7 @@ class Scraper(object):
         error_msg = "- MESSAGE: " + message['MESSAGE']
         msg = "\n".join([error, source, error_msg])
 
-        logger.error(colored("[{0}]\n".format(
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + msg, "red"))
+        logger.error(colored("[{0}]\n".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + msg, "red"))
 
         response = None
         if SLACK["url"]:
