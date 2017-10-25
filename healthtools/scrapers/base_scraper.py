@@ -9,7 +9,7 @@ import requests
 import time
 
 from bs4 import BeautifulSoup
-from cStringIO import StringIO
+from io import StringIO
 from datetime import datetime
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
