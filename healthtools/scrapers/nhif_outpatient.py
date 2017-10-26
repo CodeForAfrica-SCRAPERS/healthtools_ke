@@ -4,7 +4,7 @@ import logging
 from healthtools.scrapers.base_scraper import Scraper
 from healthtools.config import SITES, SMALL_BATCH_NHIF
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 class NhifOutpatientScraper(Scraper):
     """
@@ -66,7 +66,7 @@ class NhifOutpatientScraper(Scraper):
                 return err
             else:
                 page_retries += 1
-                logger.error("Try %d/5 has failed... \n%s \nGoing to sleep for %d seconds.",
+                log.warning("Try %d/5 has failed... \n%s \nGoing to sleep for %d seconds.",
                       page_retries, err, page_retries*5)
                 time.sleep(page_retries*5)
                 self.scrape_page(tab_num, page_retries)
