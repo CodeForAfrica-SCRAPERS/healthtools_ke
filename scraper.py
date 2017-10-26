@@ -8,11 +8,10 @@ from healthtools.scrapers.nhif_outpatient import NhifOutpatientScraper
 from healthtools.scrapers.nhif_outpatient_cs import NhifOutpatientCsScraper
 
 
-def main():
-    logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
+
 
 if __name__ == "__main__":
-    main()
 
     # Initialize the Scrapers
     doctors_scraper = DoctorsScraper()
