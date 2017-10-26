@@ -5,7 +5,7 @@ from healthtools.config import SMALL_BATCH_HF
 import requests
 from datetime import datetime
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 TOKEN_URL = "http://api.kmhfl.health.go.ke/o/token/"
 SEARCH_URL = "http://api.kmhfl.health.go.ke/api/facilities/material/?page_size={}&" \
@@ -55,7 +55,7 @@ class HealthFacilitiesScraper(Scraper):
         try:
             response = requests.post(TOKEN_URL, data=data, headers=headers)
             self.access_token = json.loads(response.text)["access_token"]
-            logger.info("[%s] Access token received.",
+            log.info("[%s] Access token received.",
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         except Exception as err:
             error = {
