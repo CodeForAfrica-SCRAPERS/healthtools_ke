@@ -8,6 +8,7 @@ import re
 import requests
 import time
 
+from time import gmtime, strftime
 from bs4 import BeautifulSoup
 from io import StringIO
 from datetime import datetime
@@ -94,10 +95,15 @@ class Scraper(object):
         self.results = []
         self.results_es = []
 
+        self.scraping_started = time.time()
+        self.scraping_ended = time.time()
+        self.stat_log = {}
+
     def run_scraper(self):
         '''
         This function works to display some output and run scrape_site()
         '''
+        self.scraping_started = time.time()
         scraper_name = re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__)
 
         _scraper_name = re.sub(" Scraper", "", scraper_name).lower()
@@ -116,7 +122,17 @@ class Scraper(object):
 
             print "[{}] Scraper completed. {} documents retrieved.".format(
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(self.results))
-
+            
+            self.scraping_ended = time.time()
+            time_taken_in_secs = self.scraping_ended - self.scraping_started
+            m, s = divmod(time_taken_in_secs, 60)
+            h, m = divmod(m, 60)        
+            time_taken = "%dhr:%02dmin:%02dsec" % (h, m, s) if time_taken_in_secs > 60 else '{} seconds'.format(time_taken_in_secs)
+            self.stat_log = {
+                'Scraping took': time_taken,
+                'Last successfull Scraping was': strftime("%Y-%m-%d %H:%M:%S", gmtime()),
+                'Total documents scraped': len(self.results)
+            }
             return self.results
 
     def scrape_site(self):

@@ -4,3 +4,5 @@
 
 # Environment settings
 .*env
+venv
+*.DS_Store
