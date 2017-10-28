@@ -9,17 +9,10 @@ from healthtools.scrapers.nhif_outpatient_cs import NhifOutpatientCsScraper
 
 
 logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__name__)
 import time
 
 scraper_id = 0
-# error message for 
-error = {
-    "ERROR": "scrapers()",
-    "SOURCE": "Scraper time tracker",
-    "MESSAGE": ""
-}
-# create a scrapper to log error message 
-scraper = Scraper()
 
 def scrapers():
     '''
@@ -87,5 +80,4 @@ if __name__ == "__main__":
         # create a random Id for this scrap instance
         import random
         scraper_id = random.randint(1, 100000)
-        error['MESSAGE'] = 'Scraper: {} is taking more than 30 minutes'.format(scraper_id)
-        scraper.print_error(error)
+        log.warning('Scraper: {} is taking more than 30 minutes'.format(scraper_id))
