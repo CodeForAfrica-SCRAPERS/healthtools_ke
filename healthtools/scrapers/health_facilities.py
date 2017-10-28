@@ -1,11 +1,9 @@
 import json
 import math
 import logging
-from werkzeug.local import LocalProxy
-from elasticsearch import Elasticsearch, RequestsHttpConnection
+from elasticsearch import Elasticsearch
 from healthtools.scrapers.base_scraper import Scraper
-from healthtools.config import SMALL_BATCH_HF
-from healthtools.config import ES
+from healthtools.config import SMALL_BATCH_HF, ES
 import requests
 from datetime import datetime
 
