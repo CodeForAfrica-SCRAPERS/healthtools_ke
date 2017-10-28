@@ -21,6 +21,8 @@ from healthtools.lib.json_serializer import JSONSerializerPython2
 
 from healthtools.handle_s3_objects import S3ObjectHandler
 
+log = logging.getLogger(__name__)
+
 class Scraper(object):
     '''
     Base Scraper:
@@ -29,6 +31,7 @@ class Scraper(object):
     '''
 
     def __init__(self):
+        parser = argparse.ArgumentParser()
         parser.add_argument('-sb', '--small-batch', action="store_true",
                             help="Specify option to scrape limited pages from site in development mode")
         parser.add_argument('-scr', '--scraper', nargs='+',

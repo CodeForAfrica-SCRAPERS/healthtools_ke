@@ -60,10 +60,7 @@ LOGGING = {
         },
         "slack": {
             "format": """
-            Location: %(module)s: %(funcName)s: %(lineno)d
-            Time: %(asctime)s
-
-            Message: %(message)s
+            Location: %(module)s: %(funcName)s: %(lineno)d \n Time: %(asctime)s \n Message: %(message)s 
             """,
             "datefmt": "%Y-%m-%d %H:%M:%S"
         }
