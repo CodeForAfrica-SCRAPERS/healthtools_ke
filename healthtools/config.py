@@ -95,7 +95,7 @@ LOGGING = {
         },
 
         "slack_log": {
-            "level": "ERROR",
+            "level": "WARNING",
             "api_key": os.getenv('SLACK_API_TOKEN', None),
             "class": "slacker_log_handler.SlackerLogHandler",
             "channel": os.getenv('SLACK_LOGGER_CHANNEL', None),
