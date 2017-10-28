@@ -1,5 +1,4 @@
 import os
-import slacker_log_handler
 
 AWS = {
     "aws_access_key_id": os.getenv("MORPH_AWS_ACCESS_KEY"),
