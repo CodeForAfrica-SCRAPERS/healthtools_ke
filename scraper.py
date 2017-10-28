@@ -13,9 +13,9 @@ if __name__ == "__main__":
     # set logging
     setup_logging()
     # Initialize the Scrapers
-    # doctors_scraper = DoctorsScraper()
-    # foreign_doctors_scraper = ForeignDoctorsScraper()
-    # clinical_officers_scraper = ClinicalOfficersScraper()
+    doctors_scraper = DoctorsScraper()
+    foreign_doctors_scraper = ForeignDoctorsScraper()
+    clinical_officers_scraper = ClinicalOfficersScraper()
     healthfacilities_scraper = HealthFacilitiesScraper()
 
     nhif_inpatient_scraper = NhifInpatientScraper()
@@ -31,17 +31,17 @@ if __name__ == "__main__":
     doctors' scraper fails, we shouldn't scrape the foreign doctors.
     '''
 
-    # doctors_result = doctors_scraper.run_scraper()
-    # if doctors_result:
-    #     foreign_doctors_scraper.doc_id = len(doctors_result)
-    #     foreign_docs_result = foreign_doctors_scraper.run_scraper()
+    doctors_result = doctors_scraper.run_scraper()
+    if doctors_result:
+        foreign_doctors_scraper.doc_id = len(doctors_result)
+        foreign_docs_result = foreign_doctors_scraper.run_scraper()
 
     '''
     Clinical Officers Scraper
     -------------------------
     Scrapes the clinical officers website.
     '''
-    # clinical_officers_result = clinical_officers_scraper.run_scraper()
+    clinical_officers_result = clinical_officers_scraper.run_scraper()
 
     '''
     Health Facilities Scraper

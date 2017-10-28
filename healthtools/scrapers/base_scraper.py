@@ -21,8 +21,6 @@ from healthtools.lib.json_serializer import JSONSerializerPython2
 
 from healthtools.handle_s3_objects import S3ObjectHandler
 
-log = logging.getLogger(__name__)
-
 class Scraper(object):
     '''
     Base Scraper:
@@ -31,8 +29,6 @@ class Scraper(object):
     '''
 
     def __init__(self):
-
-        parser = argparse.ArgumentParser()
         parser.add_argument('-sb', '--small-batch', action="store_true",
                             help="Specify option to scrape limited pages from site in development mode")
         parser.add_argument('-scr', '--scraper', nargs='+',
@@ -111,12 +107,11 @@ class Scraper(object):
                 (self.args.scraper and _scraper_name in self.args.scraper):
 
             log.info("[%s]", re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
-            log.info("[%s] Started Scraper.", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            log.info("Started Scraper.")
 
             self.scrape_site()
 
-            log.info("[%s] Scraper completed. %s documents retrieved.",
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(self.results))
+            log.info("Scraper completed. %s documents retrieved.", len(self.results))
 
             return self.results
 
@@ -270,15 +265,13 @@ class Scraper(object):
             # sanity check
             if not self.es_client.indices.exists(index=self.es_index):
                 self.es_client.indices.create(index=self.es_index)
-                log.info("[%s] Elasticsearch: Index successfully created.", 
-                      datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                log.info("Elasticsearch: Index successfully created.")
 
             # bulk index the data and use refresh to ensure that our data will
             # be immediately available
             response = self.es_client.bulk(
                 index=self.es_index, body=results, refresh=True)
-            log.info("[%s] Elasticsearch: Index successful.", 
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            log.info("Elasticsearch: Index successful.")
             return response
         except Exception as err:
             error = {
@@ -342,11 +335,10 @@ class Scraper(object):
                                         CopySource="{}/".format(
                                             AWS["s3_bucket"]) + self.data_key,
                                         Key=self.data_archive_key.format(date))
-                    log.info("[%s] Archive: Data has been updated.", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    log.info("Archive: Data has been updated.")
                     return
                 else:
-                    log.info("[%s] Archive: Data scraped does not differ from archived data.", 
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    log.info("Archive: Data scraped does not differ from archived data.")
             else:
                 # archive to local dir
                 with open(self.data_key, "w") as data:
@@ -354,8 +346,7 @@ class Scraper(object):
                 # archive historical data to local dir
                 with open(self.data_archive_key.format(date), "w") as history:
                     json.dump(payload, history)
-                log.info("[%s] Archived: Data has been updated.", 
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                log.info("Archived: Data has been updated.")
 
         except Exception as err:
             error = {
@@ -377,7 +368,7 @@ class Scraper(object):
         error_msg = "- MESSAGE: " + message['MESSAGE']
         msg = "\n".join([error, source, error_msg])
 
-        log.error(colored("[{0}]\n".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + msg, "red"))
+        log.error(colored(msg, "red"))
 
         response = None
         if SLACK["url"]:
