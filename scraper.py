@@ -67,6 +67,11 @@ def scrapers():
     nhif_outpatient_result = nhif_outpatient_scraper.run_scraper()
     nhif_outpatient_cs_result = nhif_outpatient_cs_scraper.run_scraper()
 
+    # record end time
+    end_time = time.time()
+    timeSent = (end_time - start_time) / (60)
+    if(response_time_in_minutes >= 30):
+        log.warning('Scraper: {} ran for about {} minutes'.format(scraper_id, timeSent))
 
 if __name__ == "__main__":
     import multiprocessing
@@ -80,4 +85,4 @@ if __name__ == "__main__":
         # create a random Id for this scrap instance
         import random
         scraper_id = random.randint(1, 100000)
-        log.warning('Scraper: {} is taking more than 30 minutes'.format(scraper_id))
+        log.warning('Scraper: {} is running for more than 30 minutes'.format(scraper_id))
