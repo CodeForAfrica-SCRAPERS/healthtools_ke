@@ -1,5 +1,5 @@
 import os
-
+import slacker_log_handler
 
 AWS = {
     "aws_access_key_id": os.getenv("MORPH_AWS_ACCESS_KEY"),
@@ -48,3 +48,72 @@ SITES = {
 }
 
 NHIF_SERVICES = ["inpatient", "outpatient", "outpatient-cs"]
+
+# config logging
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S"
+        },
+        "slack": {
+            "format": """
+            Location: %(module)s: %(funcName)s: %(lineno)d
+            Time: %(asctime)s
+
+            Message: %(message)s
+            """,
+            "datefmt": "%Y-%m-%d %H:%M:%S"
+        }
+    },
+
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout"
+        },
+
+        "info_file_handler": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "INFO",
+            "formatter": "simple",
+            "filename": "info.log",
+            "maxBytes": 10485760,
+            "backupCount": 20,
+            "encoding": "utf8"
+        },
+
+        "error_file_handler": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "WARNING",
+            "formatter": "simple",
+            "filename": "errors.log",
+            "maxBytes": 10485760,
+            "backupCount": 20,
+            "encoding": "utf8"
+        },
+
+        "slack_log": {
+            "level": "ERROR",
+            "api_key": os.getenv('SLACK_API_TOKEN', None),
+            "class": "slacker_log_handler.SlackerLogHandler",
+            "channel": os.getenv('SLACK_LOGGER_CHANNEL', None),
+            "username": "Scrapper Slack Logger",
+            "stack_trace": True,
+            "formatter": "slack",
+            "fail_silent": True #would not raise an error when api token is invalid
+        }
+
+    },
+
+    "root": {
+        "level": "INFO",
+        "handlers": ["console", "error_file_handler",
+             "info_file_handler","slack_log"]
+    }
+}
