@@ -10,7 +10,7 @@ import time
 
 from time import gmtime, strftime
 from bs4 import BeautifulSoup
-from io import StringIO
+from cStringIO import StringIO
 from datetime import datetime
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
