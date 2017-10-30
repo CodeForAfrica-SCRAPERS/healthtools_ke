@@ -1,5 +1,6 @@
 import json
 from time import time, gmtime, strftime
+import logging
 from healthtools.scrapers.doctors import DoctorsScraper
 from healthtools.scrapers.base_scraper import Scraper
 from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
@@ -8,6 +9,10 @@ from healthtools.scrapers.health_facilities import HealthFacilitiesScraper
 from healthtools.scrapers.nhif_inpatient import NhifInpatientScraper
 from healthtools.scrapers.nhif_outpatient import NhifOutpatientScraper
 from healthtools.scrapers.nhif_outpatient_cs import NhifOutpatientCsScraper
+
+
+logging.basicConfig(level=logging.INFO)
+
 
 if __name__ == "__main__":
 
@@ -76,5 +81,5 @@ if __name__ == "__main__":
     scraper_stats = Scraper()
     scraper_stats.data_key = "stats.json"
     scraper_stats.data_archive_key = "archive/stats-{}.json"
-    scraper_stats = scraper_stats.archive_data(json.dumps(scraping_statistics))
+    scraper_stats.archive_data(json.dumps(scraping_statistics))
 
