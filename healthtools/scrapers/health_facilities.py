@@ -34,59 +34,55 @@ class HealthFacilitiesScraper(Scraper):
 
         self.access_token = None
 
-    def index_to_es(self, current_result, isExisting=False):
-        current_page_data = []
+    def index_to_es(self, current_result):
+        current_page_data = []        
         page_count = 1
-        total_pages = int(math.ceil(len(current_result) / float(9000)))
-        while page_count < total_pages:
-            start_index = (page_count - 1) * 9000
-            end_index = start_index + 9000
+        total_pages = int(math.ceil(len(current_result) / float(10000)))
+        while page_count <= total_pages:
+            start_index = (page_count - 1) * 10000
+            end_index = start_index + 10000
             current_page_data = current_result[start_index: end_index]
-            if isExisting:
-                page_data = []
-                current_page_data = [curIndex.get('_source') for curIndex in current_page_data]
-                for hit in current_page_data:
-                    hit["id"] = self.doc_id
-                    meta, entry = self.elasticsearch_format(hit, True)
-                    page_data.append(meta)
-                    page_data.append(entry)
-
-                    self.doc_id += 1
-                current_page_data = page_data
             self.elasticsearch_index(current_page_data)
             page_count += 1
 
     def scrape_site(self):
-        existing_index_data = []
-        es = Elasticsearch("{}:{}".format(ES["host"], ES["port"]))
         doc = {
             'size': 10000,
             'query': {
                 'match_all': {}
             }
         }
-        existing_index_data = es.search(
+        existing_index_data = self.es_client.search(
             index=ES["index"], doc_type=self.es_doc, body=doc, scroll='1m')
-        existing_index_data = existing_index_data['hits']['hits']
         try:
             self.get_token()
             self.get_data()
             current_result = self.results_es
-            self.index_to_es(current_result)
             if current_result:
-                self.archive_data(json.dumps(current_result))
                 self.elasticsearch_delete_docs()
+                self.index_to_es(current_result)
+                self.archive_data(json.dumps(current_result))
 
         except Exception as err:
-            current_result = existing_index_data
-            self.index_to_es(current_result, True)
-            self.archive_data(json.dumps(current_result))
+            existing_index_data = existing_index_data['hits']['hits']
+            # add the meta and entry for the existing index
+            page_data = []
+            for hit in existing_index_data:
+                hit = hit.get('_source')
+                # reassign a new doc_id, to maintain order like 1, 2,..
+                hit["id"] = self.doc_id
+                meta, entry = self.elasticsearch_format(hit, True)
+                page_data.append(meta)
+                page_data.append(entry)
+
+                self.doc_id += 1
+            self.index_to_es(page_data)
+            self.archive_data(json.dumps(page_data))
             error = {
                 "ERROR": "scrape_site()",
                 "MESSAGE": str(err)
             }
             self.print_error(error)
-        self.archive_data(json.dumps(self.results))
         return self.results
 
     def get_token(self):
