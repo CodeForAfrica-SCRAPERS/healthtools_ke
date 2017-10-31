@@ -74,26 +74,6 @@ LOGGING = {
             "stream": "ext://sys.stdout"
         },
 
-        "info_file_handler": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "level": "INFO",
-            "formatter": "simple",
-            "filename": "info.log",
-            "maxBytes": 10485760,
-            "backupCount": 20,
-            "encoding": "utf8"
-        },
-
-        "error_file_handler": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "level": "WARNING",
-            "formatter": "simple",
-            "filename": "errors.log",
-            "maxBytes": 10485760,
-            "backupCount": 20,
-            "encoding": "utf8"
-        },
-
         "slack_log": {
             "level": "WARNING",
             "api_key": os.getenv('SLACK_API_TOKEN', None),
@@ -109,7 +89,6 @@ LOGGING = {
 
     "root": {
         "level": "INFO",
-        "handlers": ["console", "error_file_handler",
-             "info_file_handler","slack_log"]
+        "handlers": ["console","slack_log"]
     }
 }

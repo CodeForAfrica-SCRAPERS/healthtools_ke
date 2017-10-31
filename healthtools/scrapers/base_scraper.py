@@ -371,7 +371,7 @@ class Scraper(object):
         error_msg = "- MESSAGE: " + message['MESSAGE']
         msg = "\n".join([error, source, error_msg])
 
-        log.error(colored(msg, "red"))
+        log.error(msg)
 
         response = None
         if SLACK["url"]:
