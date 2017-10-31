@@ -58,7 +58,13 @@ For mac users, run `$ brew install elasticsearch` on your terminal.
 
 #### Error Handling
 
-As with anything beyond our control (the websites we are scraping), we try to catch all errors and display useful and actionable information about them.
+As with anything beyond our control (the websites we are scraping), we try to catch all errors and display useful and actionable information about them. The error message is returned as a dictionary containing:
+
+    error = {
+        "ERROR": <failing-function>
+        "SOURCE": <site_to_be_scraped>
+        "MESSAGE": <error_description>
+    }
 
 As such, we capture the following details:
 
@@ -79,13 +85,14 @@ We also provide a Slack notification option detailed below.
 
 *Slack Notification:*
 
-We use Slack notifications when the scrapers run into an error.
+We use Slack notifications when the scrapers run into an error. A Python logging handler for Slack webhook is used to format the error messages to be posted to Slack. The logging handler is an adaptation of the [python-slack-logger](https://github.com/CodeForAfricaLabs/python-slack-logger) Python module by Code for Africa.
+
 
 Set up Incoming Webhooks [here](https://slack.com/signin?redir=%2Fservices%2Fnew%2Fincoming-webhook) and set the global environment for the `MORPH_WEBHOOK_URL`
 
 If you set up elasticsearch locally run it `$ elasticsearch`
 
-You can now run the scrapers `$ python scraper.py` (It might take a while)
+You can now run the scrapers `$ python scraper.py` (It might take a while).
 
 
 ### Development

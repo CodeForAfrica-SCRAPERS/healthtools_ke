@@ -58,7 +58,7 @@ class NhifOutpatientScraper(Scraper):
         except Exception as err:
             if page_retries >= 5:
                 error = {
-                    "ERROR": "Failed to scrape data from NHIH Outpatient page.",
+                    "ERROR": "Failed to scrape data from NHIF Outpatient page.",
                     "SOURCE": "scrape_page() url: %s" % tab_num,
                     "MESSAGE": str(err)
                 }
