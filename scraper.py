@@ -85,5 +85,5 @@ if __name__ == "__main__":
     # initialize a scraper to index scraper statistics
     scraper_stats = Scraper()
     scraper_stats.data_key = "stats.json"
-    scraper_stats.data_archive_key = "archive/stats-{}.json"
+    scraper_stats.data_archive_key = "stats/stats-{}.json"
     scraper_stats.archive_data(json.dumps(scraping_statistics))
