@@ -1,3 +1,10 @@
 *.pyc
 /data/
 /.gtm/
+
+# Environment settings
+.*env
+venv
+*.DS_Store
+# visual studio code config
+.vscode

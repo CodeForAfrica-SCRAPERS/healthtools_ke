@@ -1,7 +1,7 @@
 from healthtools.scrapers.base_scraper import Scraper
 from healthtools.config import SITES
 from datetime import datetime
-
+import logging
 
 class DoctorsScraper(Scraper):
     '''
@@ -10,6 +10,7 @@ class DoctorsScraper(Scraper):
 
     def __init__(self):
         super(DoctorsScraper, self).__init__()
+        log = logging.getLogger('__main__')
         self.site_url = SITES["DOCTORS"]
         self.fields = [
             "name", "reg_date", "reg_no", "postal_address", "qualifications",

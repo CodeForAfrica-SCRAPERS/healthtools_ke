@@ -1,8 +1,11 @@
 import json
+import logging
 from healthtools.scrapers.base_scraper import Scraper
 from healthtools.config import SMALL_BATCH_HF
 import requests
 from datetime import datetime
+
+log = logging.getLogger(__name__)
 
 TOKEN_URL = "http://api.kmhfl.health.go.ke/o/token/"
 SEARCH_URL = "http://api.kmhfl.health.go.ke/api/facilities/material/?page_size={}&" \
@@ -52,10 +55,13 @@ class HealthFacilitiesScraper(Scraper):
         try:
             response = requests.post(TOKEN_URL, data=data, headers=headers)
             self.access_token = json.loads(response.text)["access_token"]
-            print("[{0}] Access token received.".format(
-                   datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            log.info("Access token received.")
         except Exception as err:
-            self.print_error("ERROR: get_token() - {}".format(str(err)))
+            error = {
+                "ERROR": "get_token()",
+                "MESSAGE": str(err)
+            }
+            self.print_error(error)
 
     def get_data(self):
         try:
@@ -75,7 +81,11 @@ class HealthFacilitiesScraper(Scraper):
                 self.doc_id += 1
 
         except Exception as err:
-            self.print_error("ERROR: get_data() - {}".format(err))
+            error = {
+                "ERROR": "get_data()",
+                "MESSAGE": str(err)
+            }
+            self.print_error(error)
 
     def elasticsearch_format(self, entry):
         meta_dict = {
