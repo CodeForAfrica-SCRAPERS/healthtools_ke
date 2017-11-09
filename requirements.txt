@@ -7,6 +7,7 @@ bs4==0.0.1
 certifi==2017.4.17
 click==6.7
 docutils==0.13.1
+dumptruck==0.1.6
 elasticsearch==5.4.0
 Flask==0.12.1
 futures==3.0.5
@@ -23,10 +24,11 @@ python-memcached==1.58
 requests==2.13.0
 requests-aws4auth==0.9
 s3transfer==0.1.10
+-e git+http://github.com/openaustralia/scraperwiki-python.git@732dda1982a3b2073f6341a6a24f9df1bda77fa0#egg=scraperwiki
 six==1.10.0
+slack-logger==0.2.0
 slackclient==1.0.6
 slacker==0.9.42
-slacker-log-handler==1.6.1
 termcolor==1.1.0
 urllib3==1.21.1
 websocket-client==0.40.0

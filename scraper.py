@@ -2,6 +2,8 @@ import json
 from time import time, gmtime, strftime
 import logging
 import logging.config
+import random
+import os
 
 from healthtools.scrapers.doctors import DoctorsScraper
 from healthtools.scrapers.base_scraper import Scraper
@@ -13,6 +15,7 @@ from healthtools.scrapers.nhif_outpatient import NhifOutpatientScraper
 from healthtools.scrapers.nhif_outpatient_cs import NhifOutpatientCsScraper
 from healthtools.config import LOGGING
 
+log = logging.getLogger(__name__)
 
 def setup_logging(default_level=logging.INFO):
     """
@@ -23,20 +26,30 @@ def setup_logging(default_level=logging.INFO):
     except Exception as ex:
         logging.basicConfig(level=default_level)
 
+    SLACK_URL = os.getenv("MORPH_WEBHOOK_URL", None)
+    if SLACK_URL: 
+        from slack_logger import SlackHandler, SlackFormatter
+        log.setLevel(logging.WARNING)
+        try:
+            sh = SlackHandler(username='Scraper Logger', url=SLACK_URL)
+            sh.setLevel(logging.WARNING)
 
+            f = SlackFormatter()
+            sh.setFormatter(f)
+            log.addHandler(sh)
+        except Exception as ex:
+            log.error('Unable to add slack_logger', str(ex))
 
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger(__name__)
-import time
-
-scraper_id = 0
+    
+# create a random Id for this scrap instance
+scraper_id = random.randint(1, 100000)
 
 def scrapers():
     '''
     Function to run every scraper
     '''
     # record the start time
-    start_time = time.time()
+    start_time = time()
     # Initialize the Scrapers
     doctors_scraper = DoctorsScraper()
     foreign_doctors_scraper = ForeignDoctorsScraper()
@@ -55,7 +68,6 @@ def scrapers():
     Doctors are a combination of local and foreign doctors. If the local
     doctors' scraper fails, we shouldn't scrape the foreign doctors.
     '''
-    start_execution = time()
 
     doctors_result = doctors_scraper.run_scraper()
     if doctors_result:
@@ -85,7 +97,7 @@ def scrapers():
     nhif_outpatient_result = nhif_outpatient_scraper.run_scraper()
     nhif_outpatient_cs_result = nhif_outpatient_cs_scraper.run_scraper()
 
-    total_runtime = time() - start_execution
+    total_runtime = time() - start_time
     m, s = divmod(total_runtime, 60)
     h, m = divmod(m, 60)
     time_taken = "%dhr:%02dmin:%02dsec" % (
@@ -107,24 +119,20 @@ def scrapers():
     scraper_stats = Scraper()
     scraper_stats.data_key = "stats.json"
     scraper_stats.data_archive_key = "stats/stats-{}.json"
-    scraper_stats.archive_data(json.dumps(scraping_statistics))
-    # record end time
-    end_time = time.time()
-    timeSent = (end_time - start_time) / (60)
-    if(response_time_in_minutes >= 30):
-        log.warning('Scraper: {} ran for about {} minutes'.format(scraper_id, timeSent))
+    scraper_stats.archive_data(json.dumps(scraping_statistics, indent=4))
+    # log warning when scraper ran more than 30 minutes
+    if(m >= 30):
+        log.warning('Scraper: {} ran for about {}'.format(scraper_id, time_taken))
 
 if __name__ == "__main__":
+    setup_logging()
     import multiprocessing
     # Start the scrapers
     scraping = multiprocessing.Process(target=scrapers)
     scraping.start()
-    scraping.join(30*60)
+    scraping.join(30 * 60)
 
     # log error if scraping is still running after 30 minutes
     if scraping.is_alive():
-        # create a random Id for this scrap instance
-        import random
-        scraper_id = random.randint(1, 100000)
         log.warning('Scraper: {} is running for more than 30 minutes'.format(scraper_id))
 

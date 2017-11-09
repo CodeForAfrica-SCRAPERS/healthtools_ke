@@ -28,7 +28,7 @@ class ClinicalOfficersScraper(Scraper):
         try:
             date_obj = datetime.strptime(entry["reg_date"], "%Y-%m-%d %H:%M")
         except:
-            date_obj = datetime.strptime(entry["reg_date"], "%d-%m-%Y %H:%M")
+            date_obj = datetime.strptime(entry["reg_date"], "%d-%m-%y %H:%M")
 
         entry["reg_date"] = datetime.strftime(
             date_obj, "%Y-%m-%dT%H:%M:%S.000Z")
