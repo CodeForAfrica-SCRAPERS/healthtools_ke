@@ -8,8 +8,9 @@ import re
 import requests
 import time
 
+from time import gmtime, strftime
 from bs4 import BeautifulSoup
-from cStringIO import StringIO
+from io import StringIO
 from datetime import datetime
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
@@ -31,7 +32,6 @@ class Scraper(object):
     '''
 
     def __init__(self):
-
         parser = argparse.ArgumentParser()
         parser.add_argument('-sb', '--small-batch', action="store_true",
                             help="Specify option to scrape limited pages from site in development mode")
@@ -95,10 +95,15 @@ class Scraper(object):
         self.results = []
         self.results_es = []
 
+        self.scraping_started = time.time()
+        self.scraping_ended = time.time()
+        self.stat_log = {}
+
     def run_scraper(self):
         '''
         This function works to display some output and run scrape_site()
         '''
+        self.scraping_started = time.time()
         scraper_name = re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__)
 
         _scraper_name = re.sub(" Scraper", "", scraper_name).lower()
@@ -111,10 +116,20 @@ class Scraper(object):
                 (self.args.scraper and _scraper_name in self.args.scraper):
 
             log.info("[%s]", re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
-            log.info("[%s] Started Scraper.", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            log.info("Started Scraper.")
 
             self.scrape_site()
-
+            
+            self.scraping_ended = time.time()
+            time_taken_in_secs = self.scraping_ended - self.scraping_started
+            m, s = divmod(time_taken_in_secs, 60)
+            h, m = divmod(m, 60)        
+            time_taken = "%dhr:%02dmin:%02dsec" % (h, m, s) if time_taken_in_secs > 60 else '{} seconds'.format(time_taken_in_secs)
+            self.stat_log = {
+                'Scraping took': time_taken,
+                'Last successfull Scraping was': strftime("%Y-%m-%d %H:%M:%S", gmtime()),
+                'Total documents scraped': len(self.results)
+            }
             log.info("[%s] Scraper completed. %s documents retrieved.",
                         datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(self.results))
 
@@ -270,15 +285,13 @@ class Scraper(object):
             # sanity check
             if not self.es_client.indices.exists(index=self.es_index):
                 self.es_client.indices.create(index=self.es_index)
-                log.info("[%s] Elasticsearch: Index successfully created.", 
-                      datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                log.info("Elasticsearch: Index successfully created.")
 
             # bulk index the data and use refresh to ensure that our data will
             # be immediately available
             response = self.es_client.bulk(
                 index=self.es_index, body=results, refresh=True)
-            log.info("[%s] Elasticsearch: Index successful.", 
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            log.info("Elasticsearch: Index successful.")
             return response
         except Exception as err:
             error = {
@@ -342,11 +355,10 @@ class Scraper(object):
                                         CopySource="{}/".format(
                                             AWS["s3_bucket"]) + self.data_key,
                                         Key=self.data_archive_key.format(date))
-                    log.info("[%s] Archive: Data has been updated.", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    log.info("Archive: Data has been updated.")
                     return
                 else:
-                    log.info("[%s] Archive: Data scraped does not differ from archived data.", 
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    log.info("Archive: Data scraped does not differ from archived data.")
             else:
                 # archive to local dir
                 with open(self.data_key, "w") as data:
@@ -354,8 +366,7 @@ class Scraper(object):
                 # archive historical data to local dir
                 with open(self.data_archive_key.format(date), "w") as history:
                     json.dump(payload, history)
-                log.info("[%s] Archived: Data has been updated.", 
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                log.info("Archived: Data has been updated.")
 
         except Exception as err:
             error = {
@@ -377,7 +388,7 @@ class Scraper(object):
         error_msg = "- MESSAGE: " + message['MESSAGE']
         msg = "\n".join([error, source, error_msg])
 
-        log.error(colored("[{0}]\n".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + msg, "red"))
+        log.error(msg)
 
         response = None
         if SLACK["url"]:
@@ -425,3 +436,18 @@ class Scraper(object):
                 headers={"Content-Type": "application/json"}
             )
         return response
+
+        
+    def parse_date(self, datetime_string):
+        '''
+        Parse a string into a datetime object 
+        :param datetime_string: the datetime string to parse
+        :return: datetime object
+        '''
+        from dateutil.parser import parse   
+        try:
+            dateobject = parse(datetime_string)
+            return dateobject
+        except Exception as ex:
+            log.error('Can not create a the datetime object from {}.'.format(datetime_string))
+            return None

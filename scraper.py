@@ -1,18 +1,30 @@
+import json
+from time import time, gmtime, strftime
 import logging
+import logging.config
+
 from healthtools.scrapers.doctors import DoctorsScraper
+from healthtools.scrapers.base_scraper import Scraper
 from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
 from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
 from healthtools.scrapers.health_facilities import HealthFacilitiesScraper
 from healthtools.scrapers.nhif_inpatient import NhifInpatientScraper
 from healthtools.scrapers.nhif_outpatient import NhifOutpatientScraper
 from healthtools.scrapers.nhif_outpatient_cs import NhifOutpatientCsScraper
+from healthtools.config import LOGGING
 
 
-logging.basicConfig(level=logging.INFO)
+def setup_logging(default_level=logging.INFO):
+    """
+    Setup logging configuration
+    """
+    try:
+        logging.config.dictConfig(LOGGING)
+    except Exception as ex:
+        logging.basicConfig(level=default_level)
 
-
+    
 if __name__ == "__main__":
-
     # Initialize the Scrapers
     doctors_scraper = DoctorsScraper()
     foreign_doctors_scraper = ForeignDoctorsScraper()
@@ -31,6 +43,7 @@ if __name__ == "__main__":
     Doctors are a combination of local and foreign doctors. If the local
     doctors' scraper fails, we shouldn't scrape the foreign doctors.
     '''
+    start_execution = time()
 
     doctors_result = doctors_scraper.run_scraper()
     if doctors_result:
@@ -59,3 +72,29 @@ if __name__ == "__main__":
     nhif_inpatient_result = nhif_inpatient_scraper.run_scraper()
     nhif_outpatient_result = nhif_outpatient_scraper.run_scraper()
     nhif_outpatient_cs_result = nhif_outpatient_cs_scraper.run_scraper()
+
+    total_runtime = time() - start_execution
+    m, s = divmod(total_runtime, 60)
+    h, m = divmod(m, 60)
+    time_taken = "%dhr:%02dmin:%02dsec" % (
+        h, m, s) if total_runtime > 60 else '{} seconds'.format(total_runtime)
+
+    scraping_statistics = {
+        'Total time Scraping took': time_taken,
+        'Last successfull Scrape was': strftime("%Y-%m-%d %H:%M:%S", gmtime()),
+        'doctors_scraper': doctors_scraper.stat_log,
+        'foreign_doctors_scraper': foreign_doctors_scraper.stat_log,
+        'clinical_officers_scraper': clinical_officers_scraper.stat_log,
+        'healthfacilities_scraper': healthfacilities_scraper.stat_log,
+        'nhif_inpatient_scraper': nhif_inpatient_scraper.stat_log,
+        'nhif_outpatient_cs_scraper': nhif_outpatient_cs_scraper.stat_log,
+        'nhif_outpatient_scraper': nhif_outpatient_scraper.stat_log,
+    }
+
+    # initialize a scraper to index scraper statistics
+    scraper_stats = Scraper()
+    scraper_stats.data_key = "stats.json"
+    scraper_stats.data_archive_key = "stats/stats-{}.json"
+    scraper_stats.archive_data(json.dumps(scraping_statistics))
+
+
