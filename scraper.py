@@ -97,4 +97,3 @@ if __name__ == "__main__":
     scraper_stats.data_archive_key = "stats/stats-{}.json"
     scraper_stats.archive_data(json.dumps(scraping_statistics))
 
-
