@@ -25,13 +25,8 @@ class ClinicalOfficersScraper(Scraper):
         :param entry: the data to be formatted
         :return: dictionaries of the entry's metadata and the formatted entry
         """
-        try:
-            date_obj = datetime.strptime(entry["reg_date"], "%Y-%m-%d %H:%M")
-        except:
-            date_obj = datetime.strptime(entry["reg_date"], "%d-%m-%Y %H:%M")
-
-        entry["reg_date"] = datetime.strftime(
-            date_obj, "%Y-%m-%dT%H:%M:%S.000Z")
+        date_obj = self.parse_date(entry["reg_date"])
+        entry["reg_date"] = datetime.strftime(date_obj, "%Y-%m-%dT%H:%M:%S.000Z")
         # all bulk data need meta data describing the data
         meta_dict = {
             "index": {

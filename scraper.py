@@ -23,20 +23,8 @@ def setup_logging(default_level=logging.INFO):
     except Exception as ex:
         logging.basicConfig(level=default_level)
 
-
-
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger(__name__)
-import time
-
-scraper_id = 0
-
-def scrapers():
-    '''
-    Function to run every scraper
-    '''
-    # record the start time
-    start_time = time.time()
+    
+if __name__ == "__main__":
     # Initialize the Scrapers
     doctors_scraper = DoctorsScraper()
     foreign_doctors_scraper = ForeignDoctorsScraper()
@@ -108,23 +96,4 @@ def scrapers():
     scraper_stats.data_key = "stats.json"
     scraper_stats.data_archive_key = "stats/stats-{}.json"
     scraper_stats.archive_data(json.dumps(scraping_statistics))
-    # record end time
-    end_time = time.time()
-    timeSent = (end_time - start_time) / (60)
-    if(response_time_in_minutes >= 30):
-        log.warning('Scraper: {} ran for about {} minutes'.format(scraper_id, timeSent))
-
-if __name__ == "__main__":
-    import multiprocessing
-    # Start the scrapers
-    scraping = multiprocessing.Process(target=scrapers)
-    scraping.start()
-    scraping.join(30*60)
-
-    # log error if scraping is still running after 30 minutes
-    if scraping.is_alive():
-        # create a random Id for this scrap instance
-        import random
-        scraper_id = random.randint(1, 100000)
-        log.warning('Scraper: {} is running for more than 30 minutes'.format(scraper_id))
 
