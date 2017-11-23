@@ -37,7 +37,7 @@ else:
 
 # sites to be scraped
 SITES = {
-    "DOCTORS": "http://medicalboard.co.ke/online-services/retention/?currpage={}",
+    "DOCTORS": "https://medicalboard.co.ke/online-services/retention/?currpage={}",
     "FOREIGN_DOCTORS": "http://medicalboard.co.ke/online-services/foreign-doctors-license-register/?currpage={}",
     "CLINICAL_OFFICERS": "http://clinicalofficerscouncil.org/online-services/retention/?currpage={}",
     "TOKEN_URL": "http://api.kmhfl.health.go.ke/o/token/",
@@ -49,7 +49,6 @@ SITES = {
 NHIF_SERVICES = ["inpatient", "outpatient", "outpatient-cs"]
 
 # config logging
-
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -57,38 +56,20 @@ LOGGING = {
         "simple": {
             "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             "datefmt": "%Y-%m-%d %H:%M:%S"
-        },
-        "slack": {
-            "format": """
-            Location: %(module)s: %(funcName)s: %(lineno)d \n Time: %(asctime)s \n Message: %(message)s 
-            """,
-            "datefmt": "%Y-%m-%d %H:%M:%S"
         }
     },
-
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "level": "DEBUG",
-            "formatter": "simple",
             "stream": "ext://sys.stdout"
-        },
-
-        "slack_log": {
-            "level": "WARNING",
-            "api_key": os.getenv('SLACK_API_TOKEN', None),
-            "class": "slacker_log_handler.SlackerLogHandler",
-            "channel": os.getenv('SLACK_LOGGER_CHANNEL', None),
-            "username": "Scrapper Slack Logger",
-            "stack_trace": True,
-            "formatter": "slack",
-            "fail_silent": True #would not raise an error when api token is invalid
         }
 
     },
 
     "root": {
         "level": "INFO",
-        "handlers": ["console","slack_log"]
+        "handlers": ["console"]
     }
 }
+

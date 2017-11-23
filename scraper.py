@@ -22,9 +22,25 @@ def setup_logging(default_level=logging.INFO):
         logging.config.dictConfig(LOGGING)
     except Exception as ex:
         logging.basicConfig(level=default_level)
-
     
-if __name__ == "__main__":
+    # add slack log handler
+    SLACK_URL = os.getenv("MORPH_WEBHOOK_URL", None)
+    if SLACK_URL: 
+        from slack_logger import SlackHandler, SlackFormatter
+        log.setLevel(logging.WARNING)
+        try:
+            sh = SlackHandler(username='Scraper Logger', url=SLACK_URL)
+            sh.setLevel(logging.WARNING)
+            f = SlackFormatter()
+            sh.setFormatter(f)
+            log.addHandler(sh)
+        except Exception as ex:
+            log.error('Unable to add slack_logger', str(ex))
+    
+def scrapers():
+    '''
+    Function to run every scraper
+    '''
     # Initialize the Scrapers
     doctors_scraper = DoctorsScraper()
     foreign_doctors_scraper = ForeignDoctorsScraper()
@@ -97,3 +113,18 @@ if __name__ == "__main__":
     scraper_stats.data_archive_key = "stats/stats-{}.json"
     scraper_stats.archive_data(json.dumps(scraping_statistics))
 
+    # log warning when scraper ran more than 30 minutes
+    if(m >= 30):
+        log.warning('Scraper: {} ran for about {}'.format(scraper_id, time_taken))
+
+if __name__ == "__main__":
+    setup_logging()
+    import multiprocessing
+    # Start the scrapers
+    scraping = multiprocessing.Process(target=scrapers)
+    scraping.start()
+    scraping.join(30 * 60)
+
+    # log error if scraping is still running after 30 minutes
+    if scraping.is_alive():
+        log.warning('Scraper: {} is running for more than 30 minutes'.format(scraper_id))
