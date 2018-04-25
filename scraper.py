@@ -3,14 +3,8 @@ from time import time, gmtime, strftime
 import logging
 import logging.config
 
-from healthtools.scrapers.doctors import DoctorsScraper
-from healthtools.scrapers.base_scraper import Scraper
-from healthtools.scrapers.foreign_doctors import ForeignDoctorsScraper
-from healthtools.scrapers.clinical_officers import ClinicalOfficersScraper
-from healthtools.scrapers.health_facilities import HealthFacilitiesScraper
-from healthtools.scrapers.nhif_inpatient import NhifInpatientScraper
-from healthtools.scrapers.nhif_outpatient import NhifOutpatientScraper
-from healthtools.scrapers.nhif_outpatient_cs import NhifOutpatientCsScraper
+from healthtools.scrapers import *
+
 from healthtools.config import LOGGING
 
 
@@ -25,6 +19,9 @@ def setup_logging(default_level=logging.INFO):
 
     
 if __name__ == "__main__":
+    
+    setup_logging()
+
     # Initialize the Scrapers
     doctors_scraper = DoctorsScraper()
     foreign_doctors_scraper = ForeignDoctorsScraper()
@@ -43,7 +40,7 @@ if __name__ == "__main__":
     Doctors are a combination of local and foreign doctors. If the local
     doctors' scraper fails, we shouldn't scrape the foreign doctors.
     '''
-    start_execution = time()
+    time_start = time()
 
     doctors_result = doctors_scraper.run_scraper()
     if doctors_result:
@@ -73,14 +70,19 @@ if __name__ == "__main__":
     nhif_outpatient_result = nhif_outpatient_scraper.run_scraper()
     nhif_outpatient_cs_result = nhif_outpatient_cs_scraper.run_scraper()
 
-    total_runtime = time() - start_execution
-    m, s = divmod(total_runtime, 60)
+
+    '''
+    Log time taken
+    '''
+
+    time_total = time() - time_start
+    m, s = divmod(time_total, 60)
     h, m = divmod(m, 60)
-    time_taken = "%dhr:%02dmin:%02dsec" % (
-        h, m, s) if total_runtime > 60 else '{} seconds'.format(total_runtime)
+    time_total_formatted = "%dhr:%02dmin:%02dsec" % (
+        h, m, s) if time_total > 60 else '{} seconds'.format(time_total)
 
     scraping_statistics = {
-        'Total time Scraping took': time_taken,
+        'Total time Scraping took': time_total_formatted,
         'Last successfull Scrape was': strftime("%Y-%m-%d %H:%M:%S", gmtime()),
         'doctors_scraper': doctors_scraper.stat_log,
         'foreign_doctors_scraper': foreign_doctors_scraper.stat_log,
@@ -96,4 +98,3 @@ if __name__ == "__main__":
     scraper_stats.data_key = "stats.json"
     scraper_stats.data_archive_key = "stats/stats-{}.json"
     scraper_stats.archive_data(json.dumps(scraping_statistics))
-
