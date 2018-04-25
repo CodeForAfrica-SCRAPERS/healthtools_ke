@@ -1,0 +1,6 @@
+*
+!.gitignore
+
+!archive
+!stats
+!test
