@@ -22,8 +22,6 @@ from healthtools.lib.json_serializer import JSONSerializerPython2
 
 from healthtools.handle_s3_objects import S3ObjectHandler
 
-log = logging.getLogger(__name__)
-
 class Scraper(object):
     '''
     Base Scraper:
@@ -36,14 +34,17 @@ class Scraper(object):
         parser.add_argument('-sb', '--small-batch', action="store_true",
                             help="Specify option to scrape limited pages from site in development mode")
         parser.add_argument('-scr', '--scraper', nargs='+',
-                            choices=["doctors", "clinical_officers",
-                                     "health_facilities", "nhif_inpatient",
-                                     "nhif_outpatient", "nhif_outpatient_cs"],
-                            help="Specify to allow selection of what to scrape")
+                            choices=["doctors", "foreign_doctors", "clinical_officers",
+                                     "nhif_outpatient", "nhif_outpatient_cs", "nhif_inpatient",
+                                     "health_facilities"],
+                            help="Allows selection of what to scrape instead of the default everything.")
 
         self.args = parser.parse_args()
 
         self.small_batch = True if self.args.small_batch else False
+
+        # Logging
+        self.log = logging.getLogger(__name__)
 
         self.site_url = None
         self.site_pages_no = None
@@ -109,17 +110,17 @@ class Scraper(object):
         _scraper_name = re.sub(" Scraper", "", scraper_name).lower()
         _scraper_name = re.sub(" ", "_", _scraper_name)
 
-        if self.args.scraper and "doctors" in self.args.scraper:
-            self.args.scraper.append("foreign_doctors")
-
         if not self.args.scraper or \
                 (self.args.scraper and _scraper_name in self.args.scraper):
 
-            log.info("[%s]", re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
-            log.info("Started Scraper.")
+            self.log.info("[%s]", re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
+            self.log.info("Started Scraper.")
 
             self.scrape_site()
             
+            '''
+            Log stats
+            '''
             self.scraping_ended = time.time()
             time_taken_in_secs = self.scraping_ended - self.scraping_started
             m, s = divmod(time_taken_in_secs, 60)
@@ -130,7 +131,7 @@ class Scraper(object):
                 'Last successfull Scraping was': strftime("%Y-%m-%d %H:%M:%S", gmtime()),
                 'Total documents scraped': len(self.results)
             }
-            log.info("[%s] Scraper completed. %s documents retrieved.",
+            self.log.info("[%s] Scraper completed. %s documents retrieved.",
                         datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(self.results))
 
             return self.results
@@ -172,7 +173,7 @@ class Scraper(object):
             self.results_es.extend(results_es)
 
         if self.results:
-            self.archive_data(json.dumps(self.results))
+            self.archive_data(self.results)
             self.elasticsearch_delete_docs()
             self.elasticsearch_index(self.results_es)
 
@@ -207,6 +208,7 @@ class Scraper(object):
             return results, results_es
 
         except Exception as err:
+            # TODO: Check page_retries functionality
             if page_retries >= 5:
                 error = {
                     "ERROR": "scrape_page()",
@@ -248,10 +250,10 @@ class Scraper(object):
         # If small batch is set, that would be the number of pages.
         if self.small_batch and self.site_pages_no and self.site_pages_no > SMALL_BATCH:
             self.site_pages_no = SMALL_BATCH
+        
+        self.log.info(str.format('{} pages found.', self.site_pages_no))
 
         return self.site_pages_no
-
-        # TODO: Print how many pages we found
 
     def make_soup(self, url):
         '''
@@ -285,13 +287,13 @@ class Scraper(object):
             # sanity check
             if not self.es_client.indices.exists(index=self.es_index):
                 self.es_client.indices.create(index=self.es_index)
-                log.info("Elasticsearch: Index successfully created.")
+                self.log.info("Elasticsearch: Index successfully created.")
 
             # bulk index the data and use refresh to ensure that our data will
             # be immediately available
             response = self.es_client.bulk(
-                index=self.es_index, body=results, refresh=True)
-            log.info("Elasticsearch: Index successful.")
+                index=self.es_index, body=results)
+            self.log.info("Elasticsearch: Index successful.")
             return response
         except Exception as err:
             error = {
@@ -305,21 +307,12 @@ class Scraper(object):
         '''
         Delete documents that were uploaded to elasticsearch in the last scrape
         '''
+        delete_query = {"query": {"match_all": {}}}
         try:
-            delete_query = {"query": {"match_all": {}}}
-            try:
-                response = self.es_client.delete_by_query(
-                    index=self.es_index, doc_type=self.es_doc,
-                    body=delete_query, _source=True)
-                return response
-            except Exception as err:
-                error = {
-                    "ERROR": "elasticsearch_delete_docs()",
-                    "SOURCE": type(self).__name__,
-                    "MESSAGE": str(err)
-                }
-                self.print_error(error)
-
+            response = self.es_client.delete_by_query(
+                index=self.es_index, doc_type=self.es_doc,
+                body=delete_query)
+            return response
         except Exception as err:
             error = {
                 "ERROR": "elasticsearch_delete_docs()",
@@ -338,7 +331,7 @@ class Scraper(object):
             self.data_archive_key = DATA_DIR + self.data_archive_key
 
             if AWS["s3_bucket"]:
-                # Check if bucket exists and has the expected file structure
+                # TODO: Check if bucket exists and has the expected file structure
                 self.s3_handler.handle_s3_objects(
                     bucket_name=AWS["s3_bucket"], key=self.data_key)
 
@@ -355,10 +348,10 @@ class Scraper(object):
                                         CopySource="{}/".format(
                                             AWS["s3_bucket"]) + self.data_key,
                                         Key=self.data_archive_key.format(date))
-                    log.info("Archive: Data has been updated.")
+                    self.log.info("Archive: Data has been updated.")
                     return
                 else:
-                    log.info("Archive: Data scraped does not differ from archived data.")
+                    self.log.info("Archive: Data scraped does not differ from archived data.")
             else:
                 # archive to local dir
                 with open(self.data_key, "w") as data:
@@ -366,7 +359,7 @@ class Scraper(object):
                 # archive historical data to local dir
                 with open(self.data_archive_key.format(date), "w") as history:
                     json.dump(payload, history)
-                log.info("Archived: Data has been updated.")
+                self.log.info("Archived: Data has been updated.")
 
         except Exception as err:
             error = {
@@ -388,7 +381,7 @@ class Scraper(object):
         error_msg = "- MESSAGE: " + message['MESSAGE']
         msg = "\n".join([error, source, error_msg])
 
-        log.error(msg)
+        self.log.error(msg)
 
         response = None
         if SLACK["url"]:
@@ -449,5 +442,5 @@ class Scraper(object):
             dateobject = parse(datetime_string)
             return dateobject
         except Exception as ex:
-            log.error('Can not create a the datetime object from {}.'.format(datetime_string))
+            self.log.error('Can not create a the datetime object from {}.'.format(datetime_string))
             return None

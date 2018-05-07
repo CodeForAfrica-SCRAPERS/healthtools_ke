@@ -1,3 +1,5 @@
+import logging
+
 from healthtools.scrapers.base_scraper import Scraper
 from healthtools.config import SITES
 from datetime import datetime
@@ -10,6 +12,8 @@ class DoctorsScraper(Scraper):
 
     def __init__(self):
         super(DoctorsScraper, self).__init__()
+        
+        self.log = logging.getLogger(__name__)
         self.site_url = SITES["DOCTORS"]
         self.fields = [
             "name", "reg_date", "reg_no", "postal_address", "qualifications",
@@ -19,18 +23,14 @@ class DoctorsScraper(Scraper):
         self.data_key = "doctors.json"
         self.data_archive_key = "archive/doctors-{}.json"
 
-    def format_for_elasticsearch(self, entry):
+    def elasticsearch_format(self, entry):
         """
         Format entry into elasticsearch ready document
         :param entry: the data to be formatted
         :return: dictionaries of the entry's metadata and the formatted entry
         """
-        try:
-            date_obj = datetime.strptime(entry["reg_date"], "%Y-%m-%d")
-        except:
-            date_obj = datetime.strptime(entry["reg_date"], "%d-%m-%Y")
-        entry["reg_date"] = datetime.strftime(
-            date_obj, "%Y-%m-%dT%H:%M:%S.000Z")
+        date_obj = self.parse_date(entry["reg_date"])
+        entry["reg_date"] = datetime.strftime(date_obj, "%Y-%m-%d")
         entry["facility"] = entry["practice_type"] = "-"
         entry["doctor_type"] = "local_doctor"
         # all bulk data need meta data describing the data

@@ -21,6 +21,7 @@ def setup_logging(default_level=logging.INFO):
 if __name__ == "__main__":
     
     setup_logging()
+    time_start = time()
 
     # Initialize the Scrapers
     doctors_scraper = DoctorsScraper()
@@ -39,13 +40,12 @@ if __name__ == "__main__":
     ---------------
     Doctors are a combination of local and foreign doctors. If the local
     doctors' scraper fails, we shouldn't scrape the foreign doctors.
-    '''
-    time_start = time()
 
+    FIX: For now we are storing the doctors and foreign doctors in separate
+    doc types. We shall combine results in API result.
+    '''
     doctors_result = doctors_scraper.run_scraper()
-    if doctors_result:
-        foreign_doctors_scraper.doc_id = len(doctors_result)
-        foreign_docs_result = foreign_doctors_scraper.run_scraper()
+    foreign_docs_result = foreign_doctors_scraper.run_scraper()
 
     '''
     Clinical Officers Scraper
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     '''
     NHIF Scraper
-    -------------------------
+    ------------
     Scrapes the NHIF website for accredited hospital / facitilities.
     '''
     nhif_inpatient_result = nhif_inpatient_scraper.run_scraper()
@@ -72,9 +72,11 @@ if __name__ == "__main__":
 
 
     '''
-    Log time taken
+    STATS
+    -----
+    Log time taken and other stats
     '''
-
+    # TODO: Move this to its own module
     time_total = time() - time_start
     m, s = divmod(time_total, 60)
     h, m = divmod(m, 60)
