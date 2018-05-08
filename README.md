@@ -22,41 +22,44 @@ These instructions will get you a copy of the project up and running on your loc
 
 To get the data we follow a couple of steps:
 
-**1. Start by scraping the websites:** This is done in most cases using beautiful soup.  
-**2. Elasticsearch update:** Replace data on elasticsearch with the new one. We only delete the documents after succesful   completion of the scraping and not before. In the doctors' case, because we pull together foreign and local doctors, we won't update elasticsearch until both have been scraped succesfully.  
-**3. Archive the data:** We archive the data in a "latest" .json file so that the url doesn't have to change to get the latest version in a "dump" format. A date-stamped archive is also stored as we later intend to do some analysis on the changes over time.
+**1. Scrape website:** This is done in most cases using [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/).  
+**2. Elastic Index update:** Replace data on elasticsearch with the new one. We only delete the documents after succesful completion of the scraping and not before. In the doctors' case, because we pull together foreign and local doctors, we won't update elasticsearch until both have been scraped succesfully.  
+**3. Archive data:** We archive the data in a `latest.json` file so that the url doesn't have to change to get the latest version in a "dump" format. A date-stamped archive is also stored as we later intend to do some analysis on the changes over time.
+
+Should the scraper fail at any of these points, we log the error, and if set up, a Slack notification is sent.
 
 
-Should the scraper fail at any of these points, we print out an error, and if set up, a Slack notification is sent.
+---
+
+# Development
+
+Clone repo and install the requirements this way:
+
+```sh
+$ git clone git@github.com:CodeForAfrica-SCRAPERS/healthtools_ke.git
+$ cd healthtools_ke
+$ mkvirtualenv healthtools-ke
+(healthtools-ke)$ pip install -r requirements.txt
+```
+
+Other requirements include:
+
+- **[Elastic](https://www.elastic.co/):** Index the data scraped.
+- **Slack Webhook (*Optional*):** For error logging.
+- **S3 Bucket (*Optional*):** Used to archive data.
 
 
-### Installing
+## Elastic Setup
 
-Clone the repo from Github by running `$ git clone git@github.com:CodeForAfrica-SCRAPERS/healthtools_ke.git`.
+All the data scraped is uploaded to [Elastic](https://www.elastic.co/) for access by the [HealthTools API](https://github.com/CodeForAfricaLabs/HealthTools.API).
 
-Change directory into the package `$ cd healthtools_ke`.
+- For mac users, run `$ brew install elasticsearch` on your terminal.
+- For linux and windows users, follow instructions from this [link](https://www.elastic.co/guide/en/elasticsearch/reference/current/setup.html).
 
-Install the dependencies by running `$ pip install requirements.txt`.
+_**N/B:** Make sure if you use Elastic locally, it's running._
 
-You can set the required environment variables like so
 
-    $ export MORPH_AWS_REGION=<aws_region>
-    $ export MORPH_AWS_ACCESS_KEY_ID=<aws_access_key_id>
-    $ export MORPH_AWS_SECRET_KEY=<aws_secret_key>
-    $ export MORPH_S3_BUCKET=<s3_bucket_name> # If not set, data will be archived locally in the project's folder in a folder called data
-    $ export MORPH_ES_HOST=<elastic_search_host_endpoint> # Do not set this if you would like to use elastic search locally on your machine
-    $ export MORPH_ES_PORT=<elastic_search_host_port> # Do not set this if you would like to use elastic search default port 9200
-    $ export MORPH_WEBHOOK_URL=<slack_webhook_url> # Do not set this if you don't want to post error messages on Slack
-
-#### Elasticsearch
-
-All the data scraped is saved as an archive and into Elasticsearch for access by the [HealthTools API](https://github.com/CodeForAfricaLabs/HealthTools.API).
-
-For linux and windows users, follow instructions from this [link](https://www.elastic.co/guide/en/elasticsearch/reference/current/setup.html).
-
-For mac users, run `$ brew install elasticsearch` on your terminal.
-
-#### Error Handling
+## Error Handling
 
 As with anything beyond our control (the websites we are scraping), we try to catch all errors and display useful and actionable information about them.
 
@@ -77,29 +80,81 @@ This data is printed in terminal in the following way:
 
 We also provide a Slack notification option detailed below.
 
-*Slack Notification:*
+### Slack Notifications (Optional):
 
-We use Slack notifications when the scrapers run into an error.
+To setup Slack notifications when the scrapers run into an error, start by creating an Incoming Webhook following these steps [here](https://slack.com/signin?redir=%2Fservices%2Fnew%2Fincoming-webhook) and set the `MORPH_WEBHOOK_URL` environment variable.
 
-Set up Incoming Webhooks [here](https://slack.com/signin?redir=%2Fservices%2Fnew%2Fincoming-webhook) and set the global environment for the `MORPH_WEBHOOK_URL`
+## Configuration
 
-If you set up elasticsearch locally run it `$ elasticsearch`
+The following configurations are available for the scraper via env variables:
 
-You can now run the scrapers `$ python scraper.py` (It might take a while)
+```sh
+# Elastic host and port
+$ export MORPH_ES_HOST="127.0.0.1"
+$ export MORPH_ES_PORT=9200
 
+# AWS Keys for ES Service (optional) and S3 (optional)
+$ export MORPH_AWS_ACCESS_KEY_ID=""
+$ export MORPH_AWS_SECRET_KEY=""
 
-### Development
+# AWS Region for S3 (optional)
+$ export MORPH_AWS_REGION=""
 
-In development, instead of scraping entire websites, you can scrape only a small batch to ensure your scrapers are working as expected.
+# AWS S3 Bucket (optional)
+$ export MORPH_S3_BUCKET=""
+
+# Slack Webhook (optional)
+$ export MORPH_WEBHOOK_URL=""
+```
+
+## Usage
+
+In development, instead of scraping entire websites, you can scrape only a small batch (a few pages) to ensure your scrapers are working as expected.
 
 Set the `SMALL_BATCH`, `SMALL_BATCH_HF` (for health facilities scrapers), and `SMALL_BATCH_NHIF` (for NHIF scrapers) in the config file that will ensure the scraper doesn't scrape entire sites but just the number of pages that you would like it to scrape defined by this variable.
 
-Use `$ python scraper.py small_batch` to run the scrapers.
+Usage `$ python scraper.py --help`
+    Example `$ python scraper.py --small-batch --scraper doctors clinical_officers ` to run the scrapers.
 
 
 ## Tests
 
 Use nosetests to run tests (with stdout) like this:
-```$ nosetests --nocapture``` or ```$ nosetests -s```
 
-_**NB: Make sure if you use elasticsearch locally, it's running**_
+```sh
+$ nosetests --nocapture
+$ # Or
+$ nosetests -s
+```
+
+---
+
+# Deployment
+
+TODO
+
+---
+
+# License
+
+MIT License
+
+Copyright (c) 2018 Code for Africa
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

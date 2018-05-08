@@ -1,8 +1,10 @@
 import time
+import logging
 
 from healthtools.scrapers.base_scraper import Scraper
 from healthtools.config import SITES, SMALL_BATCH_NHIF
 
+log = logging.getLogger(__name__)
 
 class NhifOutpatientScraper(Scraper):
     """
@@ -55,12 +57,17 @@ class NhifOutpatientScraper(Scraper):
             return results, results_es
         except Exception as err:
             if page_retries >= 5:
-                self.print_error("ERROR: Failed to scrape data from page. \nurl: {} \nerr: {}".format(tab_num, str(err)))
+                error = {
+                    "ERROR": "Failed to scrape data from NHIH Outpatient page.",
+                    "SOURCE": "scrape_page() url: %s" % tab_num,
+                    "MESSAGE": str(err)
+                }
+                self.print_error(error)
                 return err
             else:
                 page_retries += 1
-                print("Try {}/5 has failed... \n{} \nGoing to sleep for {} seconds.".
-                      format(page_retries, err, page_retries*5))
+                log.warning("Try %d/5 has failed... \n%s \nGoing to sleep for %d seconds.",
+                      page_retries, err, page_retries*5)
                 time.sleep(page_retries*5)
                 self.scrape_page(tab_num, page_retries)
 
@@ -75,5 +82,10 @@ class NhifOutpatientScraper(Scraper):
                 [tag.name for tag in soup.find("div", {"id": "collapse-s6"}).find("div", {"id": "accordion"})
                  if tag.name == 'div'])
         except Exception as err:
-            self.print_error("ERROR: set_site_pages_no() \nurl: {} \nerr: {}".format(self.site_url, str(err)))
+            error = {
+                    "ERROR": "NHIF Outpatient: set_site_pages_no()",
+                    "SOURCE": "url: %s" % self.site_url,
+                    "MESSAGE": str(err)
+                }
+            self.print_error(error)
             return

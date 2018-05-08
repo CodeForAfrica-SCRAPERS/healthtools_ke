@@ -1,21 +1,26 @@
+import argparse
+import boto3
+import getpass
+import hashlib
+import json
+import logging
+import re
+import requests
+import time
+
+from time import gmtime, strftime
 from bs4 import BeautifulSoup
-from cStringIO import StringIO
+from io import StringIO
 from datetime import datetime
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 from termcolor import colored
-import requests
-import boto3
-import re
-import json
-import hashlib
-import sys
-import getpass
-import time
 
-from healthtools.config import AWS, ES, SLACK, DATA_DIR, SMALL_BATCH, NHIF_SERVICES
+from healthtools.config import (AWS, ES, SLACK, DATA_DIR,
+                                SMALL_BATCH, NHIF_SERVICES)
 from healthtools.lib.json_serializer import JSONSerializerPython2
 
+from healthtools.handle_s3_objects import S3ObjectHandler
 
 class Scraper(object):
     '''
@@ -23,9 +28,23 @@ class Scraper(object):
     -------------
     This is the default scraper inherited by the rest.
     '''
-    def __init__(self):
 
-        self.small_batch = True if "small_batch" in sys.argv else False
+    def __init__(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-sb', '--small-batch', action="store_true",
+                            help="Specify option to scrape limited pages from site in development mode")
+        parser.add_argument('-scr', '--scraper', nargs='+',
+                            choices=["doctors", "foreign_doctors", "clinical_officers",
+                                     "nhif_outpatient", "nhif_outpatient_cs", "nhif_inpatient",
+                                     "health_facilities"],
+                            help="Allows selection of what to scrape instead of the default everything.")
+
+        self.args = parser.parse_args()
+
+        self.small_batch = True if self.args.small_batch else False
+
+        # Logging
+        self.log = logging.getLogger(__name__)
 
         self.site_url = None
         self.site_pages_no = None
@@ -41,14 +60,19 @@ class Scraper(object):
             "region_name": AWS["region_name"]
         })
 
+        self.s3_handler = S3ObjectHandler(self.s3)
+
         self.data_key = DATA_DIR + "data.json"  # Storage key for latest data
-        self.data_archive_key = DATA_DIR + "archive/data-{}.json"  # Storage key for data to archive
+        # Storage key for data to archive
+        self.data_archive_key = DATA_DIR + "archive/data-{}.json"
 
         try:
             # client host for aws elastic search service
             if "aws" in ES["host"]:
                 # set up authentication credentials
-                awsauth = AWS4Auth(AWS["aws_access_key_id"], AWS["aws_secret_access_key"], AWS["region_name"], "es")
+                awsauth = AWS4Auth(AWS["aws_access_key_id"],
+                                   AWS["aws_secret_access_key"],
+                                   AWS["region_name"], "es")
                 self.es_client = Elasticsearch(
                     hosts=[{"host": ES["host"], "port": int(ES["port"])}],
                     http_auth=awsauth,
@@ -59,39 +83,72 @@ class Scraper(object):
                 )
 
             else:
-                self.es_client = Elasticsearch("{}:{}".format(ES["host"], ES["port"]))
+                self.es_client = Elasticsearch(
+                    "{}:{}".format(ES["host"], ES["port"]))
         except Exception as err:
-            self.print_error(
-                "- ERROR: ES Client Set Up \n- SOURCE: Invalid parameters for ES Client \n- MESSAGE: {}".
-                format(str(err)))
+            error = {
+                "ERROR": "ES Client Set Up",
+                "SOURCE": "Invalid parameters for ES Client",
+                "MESSAGE": str(err)
+            }
+            self.print_error(error)
 
         self.results = []
         self.results_es = []
+
+        self.scraping_started = time.time()
+        self.scraping_ended = time.time()
+        self.stat_log = {}
 
     def run_scraper(self):
         '''
         This function works to display some output and run scrape_site()
         '''
-        print "[{}] ".format(re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
-        print "[{}] Started Scraper.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        self.scraping_started = time.time()
+        scraper_name = re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__)
 
-        self.scrape_site()
+        _scraper_name = re.sub(" Scraper", "", scraper_name).lower()
+        _scraper_name = re.sub(" ", "_", _scraper_name)
 
-        print "[{}] Scraper completed. {} documents retrieved.".format(
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(self.results))
+        if not self.args.scraper or \
+                (self.args.scraper and _scraper_name in self.args.scraper):
 
-        return self.results
+            self.log.info("[%s]", re.sub(r"(\w)([A-Z])", r"\1 \2", type(self).__name__))
+            self.log.info("Started Scraper.")
+
+            self.scrape_site()
+            
+            '''
+            Log stats
+            '''
+            self.scraping_ended = time.time()
+            time_taken_in_secs = self.scraping_ended - self.scraping_started
+            m, s = divmod(time_taken_in_secs, 60)
+            h, m = divmod(m, 60)        
+            time_taken = "%dhr:%02dmin:%02dsec" % (h, m, s) if time_taken_in_secs > 60 else '{} seconds'.format(time_taken_in_secs)
+            self.stat_log = {
+                'Scraping took': time_taken,
+                'Last successfull Scraping was': strftime("%Y-%m-%d %H:%M:%S", gmtime()),
+                'Total documents scraped': len(self.results)
+            }
+            self.log.info("[%s] Scraper completed. %s documents retrieved.",
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(self.results))
+
+            return self.results
 
     def scrape_site(self):
         '''
         This functions scrapes the entire website by calling each page.
         '''
         self.set_site_pages_no()
+
         if not self.site_pages_no:
-            self.print_error(
-                "- ERROR: scrape_site() \n- SOURCE: {} \n- MESSAGE: {}"
-                .format(self.site_url, "No pages found.")
-            )
+            error = {
+                "ERROR": "scrape_site()",
+                "SOURCE": self.site_url,
+                "MESSAGE": "No pages found."
+            }
+            self.print_error(error)
             return
 
         for page_num in range(1, self.site_pages_no + 1):
@@ -104,15 +161,19 @@ class Scraper(object):
             results, results_es = self.scrape_page(url, 5)
 
             if type(results) != list:
-                self.print_error("- ERROR: scrape_site() \n- SOURCE: {} \n-MESSAGE: page: {} \ndata: {}".
-                                 format(url, page_num, results))
+                error = {
+                    "ERROR": "scrape_site()",
+                    "SOURCE": url,
+                    "MESSAGE": "page: {} \ndata: {}".format(page_num, results)
+                }
+                self.print_error(error)
                 return
 
             self.results.extend(results)
             self.results_es.extend(results_es)
 
         if self.results:
-            self.archive_data(json.dumps(self.results))
+            self.archive_data(self.results)
             self.elasticsearch_delete_docs()
             self.elasticsearch_index(self.results_es)
 
@@ -143,19 +204,29 @@ class Scraper(object):
                 results.append(entry)
 
                 self.doc_id += 1
-
+                
             return results, results_es
 
         except Exception as err:
+            # TODO: Check page_retries functionality
             if page_retries >= 5:
-                self.print_error("- ERROR: scrape_page() \n- SOURCE: {} \n- MESSAGE: {}".format(page_url, str(err)))
+                error = {
+                    "ERROR": "scrape_page()",
+                    "SOURCE": page_url,
+                    "MESSAGE": str(err)
+                }
+                self.print_error(error)
                 return
             else:
                 page_retries += 1
-                self.print_error(
-                    "- ERROR: Try {}/5 has failed... \n- SOURCE: {} \n- MESSAGE {} \nGoing to sleep for {} seconds.".
-                    format(page_retries, page_url, err, page_retries*5))
-                time.sleep(page_retries*5)
+                error = {
+                    "ERROR": "Try {}/5 has failed...".format(page_retries),
+                    "SOURCE": page_url,
+                    "MESSAGE": "{} \nGoing to sleep for {} seconds.".format(err, page_retries * 5)
+                }
+                self.print_error(error)
+
+                time.sleep(page_retries * 5)
                 self.scrape_page(page_url, page_retries)
 
     def set_site_pages_no(self):
@@ -169,14 +240,20 @@ class Scraper(object):
             pattern = re.compile("(\d+) pages?")
             self.site_pages_no = int(pattern.search(text).group(1))
         except Exception as err:
-            self.print_error("- ERROR: get_total_page_numbers() \n- SOURCE: {} \n- MESSAGE: {}".
-                             format(self.site_url, str(err)))
+            error = {
+                "ERROR": "get_total_page_numbers()",
+                "SOURCE": self.site_url,
+                "MESSAGE": str(err)
+            }
+            self.print_error(error)
 
         # If small batch is set, that would be the number of pages.
         if self.small_batch and self.site_pages_no and self.site_pages_no > SMALL_BATCH:
             self.site_pages_no = SMALL_BATCH
+        
+        self.log.info(str.format('{} pages found.', self.site_pages_no))
 
-        # TODO: Print how many pages we found
+        return self.site_pages_no
 
     def make_soup(self, url):
         '''
@@ -210,33 +287,39 @@ class Scraper(object):
             # sanity check
             if not self.es_client.indices.exists(index=self.es_index):
                 self.es_client.indices.create(index=self.es_index)
-                print("[{0}] Elasticsearch: Index successfully created.".
-                      format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                self.log.info("Elasticsearch: Index successfully created.")
 
-            # bulk index the data and use refresh to ensure that our data will be immediately available
-            response = self.es_client.bulk(index=self.es_index, body=results, refresh=True)
-            print("[{0}] Elasticsearch: Index successful.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            # bulk index the data and use refresh to ensure that our data will
+            # be immediately available
+            response = self.es_client.bulk(
+                index=self.es_index, body=results)
+            self.log.info("Elasticsearch: Index successful.")
             return response
         except Exception as err:
-            self.print_error("- ERROR: elasticsearch_index() \n- SOURCE: {} \n- MESSAGE: {}".
-                             format(type(self).__name__, str(err)))
+            error = {
+                "ERROR": "elasticsearch_index()",
+                "SOURCE": type(self).__name__,
+                "MESSAGE": str(err)
+            }
+            self.print_error(error)
 
     def elasticsearch_delete_docs(self):
         '''
         Delete documents that were uploaded to elasticsearch in the last scrape
         '''
+        delete_query = {"query": {"match_all": {}}}
         try:
-            delete_query = {"query": {"match_all": {}}}
-            try:
-                response = self.es_client.delete_by_query(index=self.es_index, doc_type=self.es_doc, body=delete_query, _source=True)
-                return response
-            except Exception as err:
-                self.print_error("- ERROR: elasticsearch_delete_docs() \n- SOURCE: {} \n- MESSAGE: {}".
-                                 format(type(self).__name__, str(err)))
-
+            response = self.es_client.delete_by_query(
+                index=self.es_index, doc_type=self.es_doc,
+                body=delete_query)
+            return response
         except Exception as err:
-            self.print_error("- ERROR: elasticsearch_delete_docs() \n- SOURCE: {} \n- MESSAGE: {}".
-                             format(type(self).__name__, str(err)))
+            error = {
+                "ERROR": "elasticsearch_delete_docs()",
+                "SOURCE": type(self).__name__,
+                "MESSAGE": str(err)
+            }
+            self.print_error(error)
 
     def archive_data(self, payload):
         '''
@@ -246,7 +329,12 @@ class Scraper(object):
             date = datetime.today().strftime("%Y%m%d")
             self.data_key = DATA_DIR + self.data_key
             self.data_archive_key = DATA_DIR + self.data_archive_key
+
             if AWS["s3_bucket"]:
+                # TODO: Check if bucket exists and has the expected file structure
+                self.s3_handler.handle_s3_objects(
+                    bucket_name=AWS["s3_bucket"], key=self.data_key)
+
                 old_etag = self.s3.get_object(
                     Bucket=AWS["s3_bucket"], Key=self.data_key)["ETag"]
                 new_etag = hashlib.md5(payload.encode("utf-8")).hexdigest()
@@ -257,13 +345,13 @@ class Scraper(object):
 
                     # archive historical data
                     self.s3.copy_object(Bucket=AWS["s3_bucket"],
-                                        CopySource="{}/".format(AWS["s3_bucket"]) + self.data_key,
+                                        CopySource="{}/".format(
+                                            AWS["s3_bucket"]) + self.data_key,
                                         Key=self.data_archive_key.format(date))
-                    print "[{0}] Archive: Data has been updated.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    self.log.info("Archive: Data has been updated.")
                     return
                 else:
-                    print "[{0}] Archive: Data scraped does not differ from archived data.".format(
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    self.log.info("Archive: Data scraped does not differ from archived data.")
             else:
                 # archive to local dir
                 with open(self.data_key, "w") as data:
@@ -271,40 +359,51 @@ class Scraper(object):
                 # archive historical data to local dir
                 with open(self.data_archive_key.format(date), "w") as history:
                     json.dump(payload, history)
-                print("[{0}] Archived: Data has been updated.".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                self.log.info("Archived: Data has been updated.")
 
         except Exception as err:
-            self.print_error("- ERROR: archive_data() \n- SOURCE: {} \n- MESSAGE: {}".format(self.data_key, str(err)))
+            error = {
+                "ERROR": "archive_data()",
+                "SOURCE": self.data_key,
+                "MESSAGE": str(err)
+            }
+
+            self.print_error(error)
 
     def print_error(self, message):
         '''
         Print error messages in the terminal.
         If slack webhook is set up, post the errors to Slack.
         '''
-        print colored("[{0}]\n".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + message, "red")
+
+        error = "- ERROR: " + message['ERROR']
+        source = ("- SOURCE: " + message['SOURCE']) if "SOURCE" in message else ""
+        error_msg = "- MESSAGE: " + message['MESSAGE']
+        msg = "\n".join([error, source, error_msg])
+
+        self.log.error(msg)
+
         response = None
         if SLACK["url"]:
             try:
-                err = message.split("-", 3)
-                severity = err[3].split(":")[1]
                 errors = {
-                    "author": err[1].replace("ERROR:", "").strip(),
-                    "pretext": err[2].replace("SOURCE:", "").strip(),
-                    "message": err[3].replace("MESSAGE:", "").strip(),
-                    "severity": severity
+                    "author": message['ERROR'],
+                    "pretext": message['SOURCE'],
+                    "message": message['MESSAGE'],
                 }
             except:
                 errors = {
                     "pretext": "",
                     "author": message,
                     "message": message,
-                    "severity": message
                 }
+
             response = requests.post(
                 SLACK["url"],
                 data=json.dumps({
                     "attachments": [
                         {
+                            "username": "Slack Logger",
                             "author_name": "{}".format(errors["author"]),
                             "color": "danger",
                             "pretext": "[SCRAPER] New Alert for {} : {}".format(errors["author"], errors["pretext"]),
@@ -313,21 +412,16 @@ class Scraper(object):
                                     "title": "Message",
                                     "value": "{}".format(errors["message"]),
                                     "short": False
-                                    },
+                                },
                                 {
                                     "title": "Machine Location",
                                     "value": "{}".format(getpass.getuser()),
                                     "short": True
-                                    },
+                                },
                                 {
                                     "title": "Time",
                                     "value": "{}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
                                     "short": True},
-                                {
-                                    "title": "Severity",
-                                    "value": "{}".format(errors["severity"]),
-                                    "short": True
-                                }
                             ]
                         }
                     ]
@@ -335,3 +429,18 @@ class Scraper(object):
                 headers={"Content-Type": "application/json"}
             )
         return response
+
+        
+    def parse_date(self, datetime_string):
+        '''
+        Parse a string into a datetime object 
+        :param datetime_string: the datetime string to parse
+        :return: datetime object
+        '''
+        from dateutil.parser import parse   
+        try:
+            dateobject = parse(datetime_string)
+            return dateobject
+        except Exception as ex:
+            self.log.error('Can not create a the datetime object from {}.'.format(datetime_string))
+            return None

@@ -157,9 +157,13 @@ class TestScrapers(BaseTest):
         self.health_facilities_scraper.get_token()
         self.assertIsNotNone(self.health_facilities_scraper.access_token)
 
-    def test_scrapper_prints_notification_on_error(self):
-        response = self.base_scraper.print_error(
-            "- ERROR: test error \n- SOURCE: Test Error Posting \n- MESSAGE: Error occurred")
+    def test_scraper_prints_notification_on_error(self):
+        error = {
+                    "ERROR": "test error",
+                    "SOURCE": "Test Error Posting",
+                    "MESSAGE": "Error occurred"
+                }
+        response = self.base_scraper.print_error(error)
         if SLACK["url"]:
             self.assertEqual(response.status_code, 200)
         else:
@@ -217,7 +221,11 @@ class TestScrapers(BaseTest):
 
     def test_local_data_directory_or_s3_bucket_provided_exists(self):
         if AWS["s3_bucket"]:
-            s3 = boto3.resource("s3")
+            s3 = boto3.resource("s3", **{
+                "aws_access_key_id": AWS["aws_access_key_id"],
+                "aws_secret_access_key": AWS["aws_secret_access_key"],
+                "region_name": AWS["region_name"]
+            })
             bucket = s3.meta.client.head_bucket(Bucket=AWS["s3_bucket"])
             self.assertEqual(bucket["ResponseMetadata"]["HTTPStatusCode"], 200)
         else:
