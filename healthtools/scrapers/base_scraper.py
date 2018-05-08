@@ -251,7 +251,7 @@ class Scraper(object):
         if self.small_batch and self.site_pages_no and self.site_pages_no > SMALL_BATCH:
             self.site_pages_no = SMALL_BATCH
         
-        self.log.info(str.format('{} pages found.', self.site_pages_no))
+        self.log.info('{} pages found.'.format(self.site_pages_no))
 
         return self.site_pages_no
 
