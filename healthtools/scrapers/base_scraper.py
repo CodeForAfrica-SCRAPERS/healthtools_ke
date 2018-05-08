@@ -292,7 +292,8 @@ class Scraper(object):
             # bulk index the data and use refresh to ensure that our data will
             # be immediately available
             response = self.es_client.bulk(
-                index=self.es_index, body=results)
+                index=self.es_index, body=results,
+                request_timeout=60, refresh='true')
             self.log.info("Elasticsearch: Index successful.")
             return response
         except Exception as err:
