@@ -342,10 +342,7 @@ class Scraper(object):
                     Bucket=AWS["s3_bucket"], Key=self.data_key)["ETag"]
                 new_etag = hashlib.md5(payload.encode("utf-8")).hexdigest()
                 if eval(old_etag) != new_etag:
-                    file_obj = StringIO(payload.encode("utf-8"))
-                    self.s3.upload_fileobj(file_obj,
-                                           AWS["s3_bucket"], self.data_key)
-
+                    self.s3.put_object(Bucket=AWS["s3_bucket"], Key=self.data_key, Body=payload)
                     # archive historical data
                     self.s3.copy_object(Bucket=AWS["s3_bucket"],
                                         CopySource="{}/".format(
