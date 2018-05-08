@@ -8,9 +8,10 @@ They retrieve data from the following sites:
 - Foreign Doctors: http://medicalboard.co.ke/online-services/foreign-doctors-license-register
 - Clinical Officers: http://clinicalofficerscouncil.org/online-services/retention/
 - Health Facilities: http://kmhfl.health.go.ke
-- NHIF accredited outpatient facilities for civil servants: http://www.nhif.or.ke/healthinsurance/medicalFacilities
 - NHIF accredited inpatient facilities: http://www.nhif.or.ke/healthinsurance/inpatientServices
 - NHIF accredited outpatient facilities: http://www.nhif.or.ke/healthinsurance/outpatientServices
+- NHIF accredited outpatient facilities for civil servants: http://www.nhif.or.ke/healthinsurance/medicalFacilities
+
 
 They currently run on [morph.io](http://morph.io) but you are able to set it up on your own server.
 
