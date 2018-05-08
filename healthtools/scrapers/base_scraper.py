@@ -330,6 +330,9 @@ class Scraper(object):
             self.data_key = DATA_DIR + self.data_key
             self.data_archive_key = DATA_DIR + self.data_archive_key
 
+            # Encode to JSON
+            payload = json.dumps(payload)
+
             if AWS["s3_bucket"]:
                 # TODO: Check if bucket exists and has the expected file structure
                 self.s3_handler.handle_s3_objects(
