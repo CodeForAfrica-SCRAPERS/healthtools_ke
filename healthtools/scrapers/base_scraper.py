@@ -438,10 +438,10 @@ class Scraper(object):
         :param datetime_string: the datetime string to parse
         :return: datetime object
         '''
-        from dateutil.parser import parse   
+        from dateutil.parser import parse
+        dateobject = parse('1900-01-01')
         try:
             dateobject = parse(datetime_string)
-            return dateobject
         except Exception as ex:
             self.log.error('Can not create a the datetime object from {}.'.format(datetime_string))
-            return None
+        return dateobject
