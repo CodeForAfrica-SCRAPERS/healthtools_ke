@@ -198,7 +198,13 @@ class Scraper(object):
                 columns.append(self.doc_id)
 
                 entry = dict(zip(self.fields, columns))
+
+                # Check if name field empty, skip
+                if not entry['name']:
+                    continue 
+
                 meta, entry = self.elasticsearch_format(entry)
+
                 results_es.append(meta)
                 results_es.append(entry)
                 results.append(entry)
