@@ -318,7 +318,7 @@ class Scraper(object):
         try:
             response = self.es_client.delete_by_query(
                 index=self.es_index, doc_type=self.es_doc,
-                body=delete_query)
+                body=delete_query, request_timeout=60)
             return response
         except Exception as err:
             error = {
