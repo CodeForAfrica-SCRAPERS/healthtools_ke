@@ -26,7 +26,6 @@ if __name__ == "__main__":
     # Initialize the Scrapers
     doctors_scraper = DoctorsScraper()
     foreign_doctors_scraper = ForeignDoctorsScraper()
-    clinical_officers_scraper = ClinicalOfficersScraper()
     healthfacilities_scraper = HealthFacilitiesScraper()
 
     nhif_inpatient_scraper = NhifInpatientScraper()
@@ -47,12 +46,6 @@ if __name__ == "__main__":
     doctors_result = doctors_scraper.run_scraper()
     foreign_docs_result = foreign_doctors_scraper.run_scraper()
 
-    '''
-    Clinical Officers Scraper
-    -------------------------
-    Scrapes the clinical officers website.
-    '''
-    clinical_officers_result = clinical_officers_scraper.run_scraper()
 
     '''
     Health Facilities Scraper
@@ -88,7 +81,6 @@ if __name__ == "__main__":
         'Last successfull Scrape was': strftime("%Y-%m-%d %H:%M:%S", gmtime()),
         'doctors_scraper': doctors_scraper.stat_log,
         'foreign_doctors_scraper': foreign_doctors_scraper.stat_log,
-        'clinical_officers_scraper': clinical_officers_scraper.stat_log,
         'healthfacilities_scraper': healthfacilities_scraper.stat_log,
         'nhif_inpatient_scraper': nhif_inpatient_scraper.stat_log,
         'nhif_outpatient_cs_scraper': nhif_outpatient_cs_scraper.stat_log,

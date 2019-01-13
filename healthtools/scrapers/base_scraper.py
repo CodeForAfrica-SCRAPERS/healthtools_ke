@@ -34,7 +34,7 @@ class Scraper(object):
         parser.add_argument('-sb', '--small-batch', action="store_true",
                             help="Specify option to scrape limited pages from site in development mode")
         parser.add_argument('-scr', '--scraper', nargs='+',
-                            choices=["doctors", "foreign_doctors", "clinical_officers",
+                            choices=["doctors", "foreign_doctors",
                                      "nhif_outpatient", "nhif_outpatient_cs", "nhif_inpatient",
                                      "health_facilities"],
                             help="Allows selection of what to scrape instead of the default everything.")

@@ -24,11 +24,6 @@ class TestScrapers(BaseTest):
             "http://medicalboard.co.ke/online-services/foreign-doctors-license-register/?currpage=1", 5)
         self.assertTrue(len(entries[1]) == 60)
 
-    def test_it_scrapes_clinical_officers_page(self):
-        entries = self.clinical_officers_scraper.scrape_page(
-            "http://clinicalofficerscouncil.org/online-services/retention/?currpage=1", 5)
-        self.assertTrue(len(entries[1]) == 60)
-
     def test_it_scrapes_nhif_inpatient_page(self):
         entries = self.nhif_inpatient_scraper.scrape_page(1, 5)
         self.assertTrue(len(entries) > 1)
@@ -51,12 +46,6 @@ class TestScrapers(BaseTest):
         with open(self.TEST_DIR + "dummy_files/foreign_doctors.json", "r") as my_file:
             data = my_file.read()
         response = self.foreign_doctors_scraper.elasticsearch_index(json.loads(data))
-        self.assertEqual(len(response["items"]), len(json.loads(data))/2)
-
-    def test_clinical_officers_scraper_uploads_to_elasticsearch(self):
-        with open(self.TEST_DIR + "dummy_files/clinical_officers.json", "r") as my_file:
-            data = my_file.read()
-        response = self.clinical_officers_scraper.elasticsearch_index(json.loads(data))
         self.assertEqual(len(response["items"]), len(json.loads(data))/2)
 
     def test_health_facilities_scraper_uploads_to_elasticsearch(self):
@@ -101,16 +90,6 @@ class TestScrapers(BaseTest):
             Bucket=AWS["s3_bucket"],
             Key=self.foreign_doctors_scraper.data_key
             )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.foreign_doctors_scraper.data_key))
-        self.assertEqual(uploaded_data, data)
-
-    def test_clinical_officers_scraper_archives_to_s3(self):
-        with open(self.TEST_DIR + "dummy_files/clinical_officers.json", "r") as my_file:
-            data = my_file.read()
-            self.clinical_officers_scraper.archive_data(data)
-        uploaded_data = self.clinical_officers_scraper.s3.get_object(
-            Bucket=AWS["s3_bucket"],
-            Key=self.clinical_officers_scraper.data_key
-            )["Body"].read() if AWS["s3_bucket"] else json.load(open(self.clinical_officers_scraper.data_key))
         self.assertEqual(uploaded_data, data)
 
     def test_health_facilities_scraper_archives_to_s3(self):
@@ -182,13 +161,6 @@ class TestScrapers(BaseTest):
             data = my_file.read()
         upload_response = self.foreign_doctors_scraper.elasticsearch_index(json.loads(data))
         delete_response = self.foreign_doctors_scraper.elasticsearch_delete_docs()
-        self.assertEqual(len(upload_response["items"]), delete_response["deleted"])
-
-    def test_delete_clinical_officers_documents_from_elasticsearch(self):
-        with open(self.TEST_DIR + "dummy_files/clinical_officers.json", "r") as my_file:
-            data = my_file.read()
-        upload_response = self.clinical_officers_scraper.elasticsearch_index(json.loads(data))
-        delete_response = self.clinical_officers_scraper.elasticsearch_delete_docs()
         self.assertEqual(len(upload_response["items"]), delete_response["deleted"])
 
     def test_delete_health_facilities_documents_from_elasticsearch(self):

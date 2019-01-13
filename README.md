@@ -6,7 +6,6 @@ They retrieve data from the following sites:
 
 - Doctors: http://medicalboard.co.ke/online-services/retention/
 - Foreign Doctors: http://medicalboard.co.ke/online-services/foreign-doctors-license-register
-- Clinical Officers: http://clinicalofficerscouncil.org/online-services/retention/
 - Health Facilities: http://kmhfl.health.go.ke
 - NHIF accredited inpatient facilities: http://www.nhif.or.ke/healthinsurance/inpatientServices
 - NHIF accredited outpatient facilities: http://www.nhif.or.ke/healthinsurance/outpatientServices
@@ -115,7 +114,7 @@ In development, instead of scraping entire websites, you can scrape only a small
 Set the `SMALL_BATCH`, `SMALL_BATCH_HF` (for health facilities scrapers), and `SMALL_BATCH_NHIF` (for NHIF scrapers) in the config file that will ensure the scraper doesn't scrape entire sites but just the number of pages that you would like it to scrape defined by this variable.
 
 Usage `$ python scraper.py --help`
-    Example `$ python scraper.py --small-batch --scraper doctors clinical_officers ` to run the scrapers.
+    Example `$ python scraper.py --small-batch --scraper doctors` to run the scrapers.
 
 
 ## Tests
