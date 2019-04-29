@@ -123,6 +123,5 @@ class HealthFacilitiesScraper(Scraper):
             }
         }
         if not isExisting:
-            entry["ward_name"] = entry["ward_name"].decode(
-                "string_escape").replace("\\", "")
+            entry["ward_name"] = entry["ward_name"].replace("\\", "")
         return meta_dict, entry

@@ -10,7 +10,7 @@ AWS = {
 ES = {
     "host": os.getenv("MORPH_ES_HOST", "127.0.0.1"),
     "port": os.getenv("MORPH_ES_PORT", 9200),
-    "index": os.getenv("MORPH_ES_INDEX", "healthtools-dev")
+    "index": os.getenv("MORPH_ES_INDEX", "htools-dev")
 }
 
 SLACK = {
