@@ -1,11 +1,10 @@
 import json
 from time import time, gmtime, strftime
 import logging
-import logging.config
-
-from healthtools.scrapers import *
+import scraperwiki
 
 from healthtools.config import LOGGING
+from healthtools.scrapers import *
 
 
 def setup_logging(default_level=logging.INFO):
@@ -86,6 +85,13 @@ if __name__ == "__main__":
         'nhif_outpatient_cs_scraper': nhif_outpatient_cs_scraper.stat_log,
         'nhif_outpatient_scraper': nhif_outpatient_scraper.stat_log,
     }
+
+    # Save stats to sqlite
+    for stat_desc, stat in scraping_statistics.items():
+        scraperwiki.sqlite.save(
+            unique_keys=['description'],
+            data={"description": stat_desc, "stat": stat}
+        )
 
     # initialize a scraper to index scraper statistics
     scraper_stats = Scraper()

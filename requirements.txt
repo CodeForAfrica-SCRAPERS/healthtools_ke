@@ -23,6 +23,7 @@ python-memcached==1.58
 requests==2.13.0
 requests-aws4auth==0.9
 s3transfer==0.1.10
+scraperwiki==0.5.1
 six==1.10.0
 slackclient==1.0.6
 slacker==0.9.42
