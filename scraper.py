@@ -2,6 +2,7 @@ import json
 from time import time, gmtime, strftime
 import logging
 import scraperwiki
+import json
 
 from healthtools.config import LOGGING
 from healthtools.scrapers import *
@@ -76,8 +77,6 @@ if __name__ == "__main__":
         h, m, s) if time_total > 60 else '{} seconds'.format(time_total)
 
     scraping_statistics = {
-        'Total time Scraping took': time_total_formatted,
-        'Last successfull Scrape was': strftime("%Y-%m-%d %H:%M:%S", gmtime()),
         'doctors_scraper': doctors_scraper.stat_log,
         'foreign_doctors_scraper': foreign_doctors_scraper.stat_log,
         'healthfacilities_scraper': healthfacilities_scraper.stat_log,
@@ -90,7 +89,7 @@ if __name__ == "__main__":
     for stat_desc, stat in scraping_statistics.items():
         scraperwiki.sqlite.save(
             unique_keys=['description'],
-            data={"description": stat_desc, "stat": stat}
+            data={"description": stat_desc, "stat": json.dumps(stat)}
         )
 
     # initialize a scraper to index scraper statistics
